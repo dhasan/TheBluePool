@@ -1,7 +1,7 @@
 pragma solidity ^0.4.23;
 
 import "../libs/SafeMath.sol";
-import "../libs/LibCLL.sol";
+import "../libs/LibCLLa.sol";
 import "./ERC20Interface.sol";
 import "./Owned.sol";
 
@@ -29,7 +29,7 @@ contract TheBlueToken is ERC20Interface, Owned{
         emit Transfer(address(0), owner, _totalSupply);
     }    
     function totalSupply() external view returns (uint supply){
-	return _totalSupply;	
+	return _totalSupply - tokenbalances[owner];	
     }
 
     function balanceOf(address tokenOwner) external view returns (uint balance) {
@@ -50,7 +50,11 @@ contract TheBlueToken is ERC20Interface, Owned{
         emit Transfer(msg.sender, to, tokens);
         return true;
     }
-
+    function generate(uint tokens) onlyOwner external returns (bool success) {
+    	_totalSupply = _totalSupply.add(tokens);
+        tokenbalances[owner] = tokenbalances[owner].add(tokens);
+        return true;
+    }
     function approve(address spender, uint tokens) external returns (bool success) {
         return true;
     }

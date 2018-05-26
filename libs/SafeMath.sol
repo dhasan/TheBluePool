@@ -34,4 +34,7 @@ library SafeMath {
         require(b > 0);
         c = a / b;
     }
+    function shiftRight(uint a, uint n) internal pure returns (uint c) {
+    	c = a / 2 ** n;
+    }
 }
