@@ -52,6 +52,26 @@ library LibCLLa {
         if (self.cll[HEAD][PREV] != HEAD || self.cll[HEAD][NEXT] != HEAD)
             return true;
     }
+    function nodeExists(CLL storage self, address n)
+        internal view returns (bool)
+    {
+        address a;
+        if (exists(self)==false)
+            return false;
+        else{
+            a = self.cll[n][NEXT];
+
+            if (a!=NULL)
+                return true;
+            else{
+                a = self.cll[n][PREV];
+                if (a!=NULL)
+                    return true;
+                else
+                    return false;
+            }
+        }
+    }
 
     // Returns the number of elements in the list
     function sizeOf(CLL storage self)

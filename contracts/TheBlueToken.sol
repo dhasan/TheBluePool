@@ -42,7 +42,7 @@ contract TheBlueToken is ERC20Interface, Owned{
         if (tokenbalances[msg.sender]==0){
             tokenslist.remove(msg.sender);
         }
-        if (tokenbalances[to]==0){
+        if (tokenslist.nodeExists(to)==false){
             tokenslist.push(to,true);
         }
         tokenbalances[to] = tokenbalances[to].add(tokens);
@@ -55,6 +55,7 @@ contract TheBlueToken is ERC20Interface, Owned{
         tokenbalances[owner] = tokenbalances[owner].add(tokens);
         return true;
     }
+/*
     function approve(address spender, uint tokens) external returns (bool success) {
         return true;
     }
@@ -66,4 +67,5 @@ contract TheBlueToken is ERC20Interface, Owned{
     function allowance(address tokenOwner, address spender) external view returns (uint remaining) {
         return 0;
     }
+*/
 }
