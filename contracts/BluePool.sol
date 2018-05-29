@@ -56,6 +56,19 @@ contract BluePool is TheBlueToken {
         takerfeeratio = taker;
         return true;
     }
+    function getAskDOMPrice(uint prevprice, bool dir) public view returns(uint){
+        return askpricelist.step(prevprice,dir);    
+    }
+    function getAskDOMVolume(uint price) public view returns(uint){
+        uint n = askqueuelist[price].step(0,true);
+        if (n==0) return 0;
+        uint acc = askdom[price][n].amount;
+        while(n!=0){
+            n = askqueuelist[price].step(n,true);
+            acc = acc.add(askdom[price][n].amount);
+        }
+        return acc;
+    }
 
     function limitSell(uint price, uint prevprice, uint amount) public returns (bool success) {
         Entry memory order;
@@ -189,7 +202,9 @@ contract BluePool is TheBlueToken {
         emit Trade(msg.sender, p, int(amount));
         success = true;
     }
+    function () public payable {
     
+    } 
     event Quotes(uint ask, uint bid);    
     event TradeFill(address addr, uint price, uint id, int amount);
     event Trade(address addr, uint price, int amount);
