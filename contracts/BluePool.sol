@@ -2,9 +2,9 @@ pragma solidity ^0.4.23;
 
 import "../libs/LibCLLu.sol";
 import "../libs/LibCLLa.sol";
-import "./TheBlueToken.sol";
+import "./BlueToken.sol";
 
-contract BluePool is TheBlueToken {
+contract BluePool is Owneds {
     using LibCLLu for LibCLLu.CLL;    
     using LibCLLa for LibCLLa.CLL;
     uint ordercnt;
@@ -15,197 +15,245 @@ contract BluePool is TheBlueToken {
         uint amount;
         bool initial;
     }
-    uint ethinvestment;
-    uint bpsinvestment;    
+
+    struct Pair {
+        bytes8 name;
+        uint mainid;
+        uint baseid;
+        uint bestask;
+        uint bestbid;
+
+        LibCLLu.CLL askpricelist;
+        mapping (uint => LibCLLu.CLL) askqueuelist;
+        mapping (uint => mapping (uint => Entry)) askdom;
+    }
+
+    struct Token {
+       // uint coininvestment;
+        uint cointotalfees;
+       // LibCLLa.CLL coindepositlist;
+       // mapping (address => uint) coindeposits;
+        BlueToken tokencontract;
+    }  
+
+    Pair[] pairs;
+    Token[] tokens;  
 
     uint takerfeeratio;
     uint makerfeeratio;
-    uint ethbalance; //fees market profit
-    uint bpsbalance; //fees market profit
    
-    LibCLLa.CLL ethdepositlist;
-    mapping (address => uint) ethdeposits;
-
-    LibCLLa.CLL bpsdepositlist;
-    mapping (address => uint) bpsdeposits; 
-
-    uint bestask;
-    uint bestbid;
-
-    LibCLLu.CLL askpricelist;
-    mapping (uint => LibCLLu.CLL) askqueuelist;
-    mapping (uint => mapping (uint => Entry)) askdom;
-   
-    constructor() TheBlueToken("BPS", "Blue Pool Shares") public {
+    constructor() Owned() public {
         ordercnt = 1;
-    }     
-    function getPrices() external view returns(uint[2]){
-    	return [bestask, bestbid];
+        Token memory t;
+        tokens.push(t);
+
+    }   
+    function createToken(bytes4 name, bytes32 desc, uint supply) public onlyOwner returns(uint){
+        Token memory t;
+        t.tokencontract = new BlueToken(tokens.length, supply, name, desc);
+        return tokens.push(t) - 1;
+    }  
+    function createPair(bytes8 _name, uint m, uint b) public onlyOwner returns(uint){
+        Pair memory p;
+        require(m!=b);
+        require((tokens.length) > m);
+        require((tokens.length) > b);
+        p.name = _name;
+        p.mainid = m;
+        p.baseid = b;
+        p.bestask = 0;
+        p.bestbid = 0;
+        return pairs.push(p) - 1;
     }
-    function getPrevAsk(uint price) public view returns (uint){
-        return askpricelist.seek(0,price,true);
+
+    function getPrices(uint pairid) public view returns(uint[2]){
+        var pair = pairs[pairid];
+    	return [pair.bestask, pair.bestbid];
     }
-    function askPriceExists(uint price) public view returns(bool){
-        return askpricelist.nodeExists(price);
+    function getPrevAsk(uint pairid, uint price) public view returns (uint){
+        var pair = pairs[pairid];
+        return pair.askpricelist.seek(0,price,true);
+    }
+    function askPriceExists(uint pairid, uint price) public view returns(bool){
+        var pair = pairs[pairid];
+        return pair.askpricelist.nodeExists(price);
+    }
+    function getAskDOMPrice(uint pairid, uint prevprice, bool dir) public view returns(uint){
+        var pair = pairs[pairid];
+        return pair.askpricelist.step(prevprice,dir);    
+    }
+    function getAskDOMVolume(uint pairid, uint price) public view returns(uint){
+        var pair = pairs[pairid];
+        uint n = pair.askqueuelist[price].step(0,true);
+        if (n==0) return 0;
+        uint acc = pair.askdom[price][n].amount;
+        while(n!=0){
+            n = pair.askqueuelist[price].step(n,true);
+            acc = acc.add(pair.askdom[price][n].amount);
+        }
+        return acc;
     }
     function getFeesRatios() public view returns(uint[2]){
         return [makerfeeratio, takerfeeratio];
     }
-    function setFeeRatios(uint maker, uint taker) public returns(bool){
+    function setFeeRatios(uint maker, uint taker) public onlyOwner returns(bool){
         makerfeeratio = maker;
         takerfeeratio = taker;
         return true;
     }
-    function getAskDOMPrice(uint prevprice, bool dir) public view returns(uint){
-        return askpricelist.step(prevprice,dir);    
-    }
-    function getAskDOMVolume(uint price) public view returns(uint){
-        uint n = askqueuelist[price].step(0,true);
-        if (n==0) return 0;
-        uint acc = askdom[price][n].amount;
-        while(n!=0){
-            n = askqueuelist[price].step(n,true);
-            acc = acc.add(askdom[price][n].amount);
-        }
-        return acc;
+
+    function getFeesTotal(uint tokenid) public view onlyOwner returns(uint) {
+        return tokens[tokenid].cointotalfees;
     }
 
-    function limitSell(uint price, uint prevprice, uint amount) public returns (bool success) {
+    function limitSell_token(uint pairid, uint price, uint prevprice, uint amount, bool ini) public returns (bool success) {
         Entry memory order;
         uint total;
-        require(price>bestbid,"Invalid ask price");
-        uint next;
-        order.addr = msg.sender;
-        order.id = ordercnt;
-        order.initial = false;
-        order.amount = amount;
-        askdom[price][ordercnt] = order;
+        uint fees;
+        uint codeLength;
+        success = false;
+        if (ini==true)
+            require(msg.sender==owner,"Initial only for owner");
 
-        if (askpricelist.nodeExists(price)==true){
-            askqueuelist[price].push(ordercnt,false);
+        assembly {
+            //retrieve the size of the code on target address, this needs assembly
+            codeLength := extcodesize(msg.sender)
+        }
+        require(codeLength==0);
+
+        var pair = pairs[pairid];
+        require(price>pair.bestbid || pair.bestbid==0,"Invalid ask price");
+        
+        uint next;
+        if (ini==false)
+            order.addr = msg.sender;
+        else
+            order.addr = address(this);
+        order.id = ordercnt;
+        order.initial = ini;
+        order.amount = amount;
+        pair.askdom[price][ordercnt] = order;
+
+        if (pair.askpricelist.nodeExists(price)==true){
+            pair.askqueuelist[price].push(ordercnt,false);
         }else{
             require(price>prevprice,"Wrong price 1");
-            next = askpricelist.step(prevprice,true);
+            next = pair.askpricelist.step(prevprice,true);
             require(price<next,"Wrong price 2");
-            askpricelist.insert(prevprice,price,true);
-            askqueuelist[price].push(ordercnt,false);
-        }
-        
-        total = price.mul(amount);
-        total = total.shiftRight(80);
-        total = total.mul(makerfeeratio);
-        total = total.shiftRight(80);
-        //total is the fee
-        if (ethdeposits[msg.sender]>total){
-            ethdeposits[msg.sender] = ethdeposits[msg.sender].sub(total);
-            if (ethdeposits[msg.sender]==0) ethdepositlist.remove(msg.sender);
-            ethbalance = ethbalance.add(total);
-        }else{
-            total = amount.mul(takerfeeratio);
-            total = total.shiftRight(80);
-            bpsdeposits[msg.sender] = bpsdeposits[msg.sender].sub(total);
-            if (bpsdeposits[msg.sender]==0) bpsdepositlist.remove(msg.sender);
-            bpsbalance = bpsbalance.add(total);
+            pair.askpricelist.insert(prevprice,price,true);
+            pair.askqueuelist[price].push(ordercnt,false);
         }
 
+        var maintoken = tokens[pair.mainid];
+        if (msg.sender!=owner){
+            fees = amount.mul(makerfeeratio);
+            fees = fees.shiftRight(80);
+            maintoken.cointotalfees = maintoken.cointotalfees.add(fees);
+        }else{
+            fees = 0;
+        }
+        total = fees.add(amount);
+        if (ini==false)
+            maintoken.tokencontract.transfer_origin(address(this), total);
+
         ordercnt++;
-        if (price<bestask){
-            bestask = price;
-            emit Quotes(bestask, bestbid);
+        if (price<pair.bestask || pair.bestask==0){
+            pair.bestask = price;
+            emit Quotes(pairid, pair.bestask, pair.bestbid);
         }
         success = true;
     }
     
-    function marketBuy(uint price, uint amount, uint slippage) public returns (bool success) {
+    function marketBuy_eth(uint pairid, uint price, uint amount, uint slippage, bool ini) public payable returns (bool success) {
         uint total;
-        require(bestask!=0);
+        uint ethacc = 0;
+        uint codeLength;
+        var pair = pairs[pairid];
+        require(pair.bestask!=0);
+        assembly {
+            //retrieve the size of the code on target address, this needs assembly
+            codeLength := extcodesize(msg.sender)
+        }
+        require(codeLength==0);
+
+        if (ini==true)
+            require(msg.sender==owner);
         
-        if (price!=bestask){
-            if (price>bestask){
-                require((price.sub(bestask)) < slippage);
+        if (price!=pair.bestask){
+            if (price>pair.bestask){
+                require((price.sub(pair.bestask)) < slippage);
             }else{
-                require((bestask.sub(price)) < slippage);
+                require((pair.bestask.sub(price)) < slippage);
             }
         }
-        uint p = bestask;
+        uint p = pair.bestask;
         uint n;
         uint vols = 0;
+        
+        var maintoken = tokens[pair.mainid];
+        
         do {
             n=0;
             do {
-                n = askqueuelist[p].step(n, true);
+                n = pair.askqueuelist[p].step(n, true);
                 if (n!=0){
-                    if (askdom[p][n].amount<=amount.sub(vols)){
-                        total = p.mul(askdom[p][n].amount);
+                    if (pair.askdom[p][n].amount<=amount.sub(vols)){
+                        total = p.mul(pair.askdom[p][n].amount);
                         total = total.shiftRight(80);
-                        ethdeposits[msg.sender] = ethdeposits[msg.sender].sub(total);
-                        if (ethdeposits[msg.sender]==0) ethdepositlist.remove(msg.sender);
-                        if (askdom[p][n].initial==false){
-                            if (ethdepositlist.nodeExists(askdom[p][n].addr)==false) ethdepositlist.push(askdom[p][n].addr,true);
-                            ethdeposits[askdom[p][n].addr] = ethdeposits[askdom[p][n].addr].add(total);
-                            emit TradeFill(askdom[p][n].addr,p,askdom[p][n].id,-1*int(askdom[p][n].amount));
-                        }else{
-                            ethinvestment.add(total);
-                        }
-                        if (bpsdepositlist.nodeExists(msg.sender)==false) bpsdepositlist.push(msg.sender,true);
-                        bpsdeposits[msg.sender] = bpsdeposits[msg.sender].add(askdom[p][n].amount);
-                        vols = vols.add(askdom[p][n].amount);
-                        askqueuelist[p].remove(n);
+
+                        require(pair.askdom[p][n].addr.send(total));
+                        if (ini==false)
+                            require(maintoken.tokencontract.transfer(msg.sender, pair.askdom[p][n].amount));
+                        emit TradeFill(pairid, pair.askdom[p][n].addr, p, pair.askdom[p][n].id, -1*int(pair.askdom[p][n].amount));
+                        ethacc = ethacc.add(total);
+
+                        vols = vols.add(pair.askdom[p][n].amount);
+                        pair.askqueuelist[p].remove(n);
                     }else{
                         total = p.mul(amount.sub(vols));
                         total = total.shiftRight(80);
-                        ethdeposits[msg.sender] = ethdeposits[msg.sender].sub(total);
-                        if (ethdeposits[msg.sender]==0) ethdepositlist.remove(msg.sender);
-                        if (askdom[p][n].initial==false){
-                            if (ethdepositlist.nodeExists(askdom[p][n].addr)==false) ethdepositlist.push(askdom[p][n].addr,true);
-                            ethdeposits[askdom[p][n].addr] = ethdeposits[askdom[p][n].addr].add(total);
-                            emit TradeFill(askdom[p][n].addr,p,askdom[p][n].id,-1*int(amount.sub(vols)));
-                        }else{
-                            ethinvestment.add(total);
-                        }
-                        if (bpsdepositlist.nodeExists(msg.sender)==false) bpsdepositlist.push(msg.sender,true);
-                        bpsdeposits[msg.sender] = bpsdeposits[msg.sender].add(amount.sub(vols));
-                        askdom[p][n].amount.sub(amount.sub(vols));
+
+                        require(pair.askdom[p][n].addr.send(total));
+                        if (ini==false)
+                            require(maintoken.tokencontract.transfer(msg.sender, amount.sub(vols)));
+                        emit TradeFill(pairid, pair.askdom[p][n].addr, p, pair.askdom[p][n].id, -1*int(pair.askdom[p][n].amount));
+                        ethacc = ethacc.add(total);
+
+                        pair.askdom[p][n].amount.sub(amount.sub(vols));
                         vols = vols.add(amount.sub(vols));
                     }
                 }
             } while((n!=0) && (vols<amount));
             if (n==0){
-                p = askpricelist.step(p,true); //ask is true
+                p = pair.askpricelist.step(p,true); //ask is true
                 require(p!=0,"Not enought market volume");
                 require((p.sub(price)) < slippage);
             }
         }while(vols<amount);
         require((p.sub(price)) < slippage);
         if (msg.sender!=owner){
+            var basetoken = tokens[pair.baseid];
             total = p.mul(amount);
             total = total.shiftRight(80);
             total = total.mul(takerfeeratio);
             total = total.shiftRight(80);
             //total is the fee
-            if (ethdeposits[msg.sender]>total){
-                ethdeposits[msg.sender] = ethdeposits[msg.sender].sub(total);
-                if (ethdeposits[msg.sender]==0) ethdepositlist.remove(msg.sender);
-                ethbalance = ethbalance.add(total);        
-            }else{
-                total = amount.mul(takerfeeratio);
-                total = total.shiftRight(80);
-                bpsdeposits[msg.sender] = bpsdeposits[msg.sender].sub(total);
-                if (bpsdeposits[msg.sender]==0) bpsdepositlist.remove(msg.sender);
-                bpsbalance = bpsbalance.add(total);
-            }
+            require(msg.value.sub(ethacc) > total);
+            basetoken.cointotalfees.add(total);
+            ethacc = ethacc.add(total);
+            if (msg.value.sub(ethacc) > 0)
+                msg.sender.send(msg.value.sub(ethacc));
+
         }
-        if (p!=bestask){
-            bestask=p;
-            emit Quotes(bestask, bestbid);
+        if (p!=pair.bestask){
+            pair.bestask=p;
+            emit Quotes(pairid, pair.bestask, pair.bestbid);
         }
-        emit Trade(msg.sender, p, int(amount));
+        emit Trade(pairid, msg.sender, p, int(amount));
         success = true;
     }
-    function () public payable {
-    
-    } 
-    event Quotes(uint ask, uint bid);    
-    event TradeFill(address addr, uint price, uint id, int amount);
-    event Trade(address addr, uint price, int amount);
+   
+    event Quotes(uint pairid, uint ask, uint bid);    
+    event TradeFill(uint pairid, address addr, uint price, uint id, int amount);
+    event Trade(uint pairid, address addr, uint price, int amount);
 }
