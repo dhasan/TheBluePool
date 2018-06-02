@@ -271,7 +271,7 @@ contract BluePool is Owned {
         emit Trade(pairid, msg.sender, p, int(amount));
     }
 
-    function tokenFallback(uint tid, address from, uint amount){
+    function tokenFallback(uint tid, address from, uint amount) public {
         
     }
    
