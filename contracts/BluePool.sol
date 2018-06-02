@@ -112,41 +112,41 @@ contract BluePool is Owned {
        // Entry memory order;
         uint total;
         uint fees;
-        uint codeLength;
-        address sender = msg.sender;
+       // uint codeLength;
+        //address sender = msg.sender;
         success = false;
         if (ini==true)
             require(msg.sender==owner,"Initial only for owner");
 
         assembly {
             //retrieve the size of the code on target address, this needs assembly
-            codeLength := extcodesize(sender)
+            total := extcodesize(caller)
         }
-        require(codeLength==0);
+        require(total==0);
 
-        var pair = pairs[pairid];
-        require(price>pair.bestbid || pair.bestbid==0,"Invalid ask price");
+        //var pair = pairs[pairid];
+        require(price>pairs[pairid].bestbid || pairs[pairid].bestbid==0,"Invalid ask price");
         
-        uint next;
-        var maintoken = tokens[pair.mainid];
+        //uint next;
+        var maintoken = tokens[pairs[pairid].mainid];
         if (ini==false){
-             pair.askdom[price][ordercnt].addr = msg.sender;
+             pairs[pairid].askdom[price][ordercnt].addr = msg.sender;
             maintoken.coininvestment = maintoken.coininvestment.add(amount);
         }else
-             pair.askdom[price][ordercnt].addr = address(this);
-        pair.askdom[price][ordercnt].id = ordercnt;
-        pair.askdom[price][ordercnt].initial = ini;
-        pair.askdom[price][ordercnt].amount = amount;
+             pairs[pairid].askdom[price][ordercnt].addr = address(this);
+        pairs[pairid].askdom[price][ordercnt].id = ordercnt;
+        pairs[pairid].askdom[price][ordercnt].initial = ini;
+        pairs[pairid].askdom[price][ordercnt].amount = amount;
         //pair.askdom[price][ordercnt] = order;
 
-        if (pair.askpricelist.nodeExists(price)==true){
-            pair.askqueuelist[price].push(ordercnt,false);
+        if (pairs[pairid].askpricelist.nodeExists(price)==true){
+            pairs[pairid].askqueuelist[price].push(ordercnt,false);
         }else{
             require(price>prevprice,"Wrong price 1");
-            next = pair.askpricelist.step(prevprice,true);
-            require(price<next,"Wrong price 2");
-            pair.askpricelist.insert(prevprice,price,true);
-            pair.askqueuelist[price].push(ordercnt,false);
+            total = pairs[pairid].askpricelist.step(prevprice,true);
+            require(price<total,"Wrong price 2");//total=next;
+            pairs[pairid].askpricelist.insert(prevprice,price,true);
+            pairs[pairid].askqueuelist[price].push(ordercnt,false);
         }
 
         
@@ -162,9 +162,9 @@ contract BluePool is Owned {
             maintoken.tokencontract.transfer_origin(address(this), total);
 
         ordercnt++;
-        if (price<pair.bestask || pair.bestask==0){
-            pair.bestask = price;
-            emit Quotes(pairid, pair.bestask, pair.bestbid);
+        if (price<pairs[pairid].bestask || pairs[pairid].bestask==0){
+            pairs[pairid].bestask = price;
+            emit Quotes(pairid, pairs[pairid].bestask, pairs[pairid].bestbid);
         }
         success = true;
     }
