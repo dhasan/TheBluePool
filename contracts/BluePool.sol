@@ -108,13 +108,13 @@ contract BluePool is Owned {
         return tokens[tokenid].cointotalfees;
     }
 
-    function limitSell_token_eth(uint pairid, uint price, uint prevprice, uint amount, bool ini) public returns (bool success) {
+    function limitSell_token_eth(uint pairid, uint price, uint prevprice, uint amount, bool ini) public returns (bool) {
        // Entry memory order;
         uint total;
         uint fees;
        // uint codeLength;
         //address sender = msg.sender;
-        success = false;
+        //success = false;
         if (ini==true)
             require(msg.sender==owner,"Initial only for owner");
 
@@ -166,14 +166,13 @@ contract BluePool is Owned {
             pairs[pairid].bestask = price;
             emit Quotes(pairid, pairs[pairid].bestask, pairs[pairid].bestbid);
         }
-        success = true;
+        return true;
     }
     
-    function marketBuy_token_eth(uint pairid, uint price, uint amount, uint slippage, bool ini) public payable returns (bool success) {
+    function marketBuy_token_eth(uint pairid, uint price, uint amount, uint slippage, bool ini) public payable returns (bool) {
         uint total;
         uint ethacc = 0;
 
-        //var pair = pairs[pairid];
         require( pairs[pairid].bestask!=0);
         assembly {
             //retrieve the size of the code on target address, this needs assembly
@@ -194,9 +193,6 @@ contract BluePool is Owned {
         uint p = pairs[pairid].bestask;
         uint n;
         uint vols = 0;
-        
-       // var maintoken = tokens[pairs[pairid].mainid];
-       // var basetoken = tokens[pairs[pairid].baseid];
         
         do {
             n=0;
@@ -273,7 +269,7 @@ contract BluePool is Owned {
             emit Quotes(pairid, pairs[pairid].bestask, pairs[pairid].bestbid);
         }
         emit Trade(pairid, msg.sender, p, int(amount));
-        success = true;
+        return true;
     }
 
     function tokenFallback(uint tid, address from, uint amount){
@@ -281,6 +277,6 @@ contract BluePool is Owned {
     }
    
     event Quotes(uint pairid, uint ask, uint bid);    
-    event TradeFill(uint pairid, address addr, uint price, uint id, int amount);
+    event TradeFill(uint indexed pairid, address indexed addr, uint indexed price, uint indexed id, int amount);
     event Trade(uint pairid, address addr, uint price, int amount);
 }
