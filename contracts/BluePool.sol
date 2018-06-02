@@ -169,7 +169,7 @@ contract BluePool is Owned {
         return true;
     }
     
-    function marketBuy_token_eth(uint pairid, uint price, uint amount, uint slippage) public payable returns (bool) {
+    function marketBuy_token_eth(uint pairid, uint price, uint amount, uint slippage, bool ini) public payable returns (bool) {
         uint total;
         uint ethacc = 0;
 
@@ -209,13 +209,13 @@ contract BluePool is Owned {
                             tokens[pairs[pairid].baseid].coininvestment = tokens[pairs[pairid].baseid].coininvestment.add(total);
                             tokens[pairs[pairid].mainid].coininvestment = tokens[pairs[pairid].mainid].coininvestment.sub(pairs[pairid].askdom[p][n].amount);
                         }
-                       // if (ini==false)
+                        if (ini==false)
                             require(tokens[pairs[pairid].mainid].tokencontract.transfer(msg.sender, pairs[pairid].askdom[p][n].amount));
-                       // else{
-                       //     tokens[pairs[pairid].mainid].coininvestment = tokens[pairs[pairid].mainid].coininvestment.add(pairs[pairid].askdom[p][n].amount);
-                       //     tokens[pairs[pairid].baseid].coininvestment = tokens[pairs[pairid].baseid].coininvestment.sub(total);
-                       // }
-                        emit TradeFill(pairid, pairs[pairid].askdom[p][n].addr, p, pairs[pairid].askdom[p][n].id, -1*int(pairs[pairid].askdom[p][n].amount));
+                        else{
+                            tokens[pairs[pairid].mainid].coininvestment = tokens[pairs[pairid].mainid].coininvestment.add(pairs[pairid].askdom[p][n].amount);
+                            tokens[pairs[pairid].baseid].coininvestment = tokens[pairs[pairid].baseid].coininvestment.sub(total);
+                        }
+                        emit TradeFill(pairid, pairs[pairid].askdom[p][n].addr, pairs[pairid].askdom[p][n].id, -1*int(pairs[pairid].askdom[p][n].amount));
                         ethacc = ethacc.add(total);
 
                         vols = vols.add(pairs[pairid].askdom[p][n].amount);
@@ -229,13 +229,13 @@ contract BluePool is Owned {
                             tokens[pairs[pairid].baseid].coininvestment = tokens[pairs[pairid].baseid].coininvestment.add(total);
                             tokens[pairs[pairid].mainid].coininvestment = tokens[pairs[pairid].mainid].coininvestment.sub(amount.sub(vols));
                         }
-                        //if (ini==false)
+                        if (ini==false)
                             require(tokens[pairs[pairid].mainid].tokencontract.transfer(msg.sender, amount.sub(vols)));
-                        //else{
-                        //    tokens[pairs[pairid].mainid].coininvestment = tokens[pairs[pairid].mainid].coininvestment.add(amount.sub(vols));
-                        //    tokens[pairs[pairid].baseid].coininvestment = tokens[pairs[pairid].baseid].coininvestment.sub(total);
-                        //}
-                        emit TradeFill(pairid, pairs[pairid].askdom[p][n].addr, p, pairs[pairid].askdom[p][n].id, -1*int(pairs[pairid].askdom[p][n].amount));
+                        else{
+                            tokens[pairs[pairid].mainid].coininvestment = tokens[pairs[pairid].mainid].coininvestment.add(amount.sub(vols));
+                            tokens[pairs[pairid].baseid].coininvestment = tokens[pairs[pairid].baseid].coininvestment.sub(total);
+                        }
+                        emit TradeFill(pairid, pairs[pairid].askdom[p][n].addr, pairs[pairid].askdom[p][n].id, -1*int(pairs[pairid].askdom[p][n].amount));
                         ethacc = ethacc.add(total);
 
                         pairs[pairid].askdom[p][n].amount.sub(amount.sub(vols));
@@ -277,6 +277,6 @@ contract BluePool is Owned {
     }
    
     event Quotes(uint pairid, uint ask, uint bid);    
-    event TradeFill(uint indexed pairid, address indexed addr, uint indexed price, uint id, int amount);
+    event TradeFill(uint indexed pairid, address indexed addr, uint id, int amount);
     event Trade(uint pairid, address addr, uint price, int amount);
 }
