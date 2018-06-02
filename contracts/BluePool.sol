@@ -195,8 +195,8 @@ contract BluePool is Owned {
         uint n;
         uint vols = 0;
         
-        var maintoken = tokens[pairs[pairid].mainid];
-        var basetoken = tokens[pairs[pairid].baseid];
+       // var maintoken = tokens[pairs[pairid].mainid];
+       // var basetoken = tokens[pairs[pairid].baseid];
         
         do {
             n=0;
@@ -210,14 +210,14 @@ contract BluePool is Owned {
                         if (pairs[pairid].askdom[p][n].initial==false)
                             require(pairs[pairid].askdom[p][n].addr.send(total));
                         else{
-                            basetoken.coininvestment = basetoken.coininvestment.add(total);
-                            maintoken.coininvestment = maintoken.coininvestment.sub(pairs[pairid].askdom[p][n].amount);
+                            tokens[pairs[pairid].baseid].coininvestment = tokens[pairs[pairid].baseid].coininvestment.add(total);
+                            tokens[pairs[pairid].mainid].coininvestment = tokens[pairs[pairid].mainid].coininvestment.sub(pairs[pairid].askdom[p][n].amount);
                         }
                         if (ini==false)
-                            require(maintoken.tokencontract.transfer(msg.sender, pairs[pairid].askdom[p][n].amount));
+                            require(tokens[pairs[pairid].mainid].tokencontract.transfer(msg.sender, pairs[pairid].askdom[p][n].amount));
                         else{
-                            maintoken.coininvestment = maintoken.coininvestment.add(pairs[pairid].askdom[p][n].amount);
-                            basetoken.coininvestment = basetoken.coininvestment.sub(total);
+                            tokens[pairs[pairid].mainid].coininvestment = tokens[pairs[pairid].mainid].coininvestment.add(pairs[pairid].askdom[p][n].amount);
+                            tokens[pairs[pairid].baseid].coininvestment = tokens[pairs[pairid].baseid].coininvestment.sub(total);
                         }
                         emit TradeFill(pairid, pairs[pairid].askdom[p][n].addr, p, pairs[pairid].askdom[p][n].id, -1*int(pairs[pairid].askdom[p][n].amount));
                         ethacc = ethacc.add(total);
@@ -230,14 +230,14 @@ contract BluePool is Owned {
                         if (pairs[pairid].askdom[p][n].initial==false)
                             require(pairs[pairid].askdom[p][n].addr.send(total));
                         else{
-                            basetoken.coininvestment = basetoken.coininvestment.add(total);
-                            maintoken.coininvestment = maintoken.coininvestment.sub(amount.sub(vols));
+                            tokens[pairs[pairid].baseid].coininvestment = tokens[pairs[pairid].baseid].coininvestment.add(total);
+                            tokens[pairs[pairid].mainid].coininvestment = tokens[pairs[pairid].mainid].coininvestment.sub(amount.sub(vols));
                         }
                         if (ini==false)
-                            require(maintoken.tokencontract.transfer(msg.sender, amount.sub(vols)));
+                            require(tokens[pairs[pairid].mainid].tokencontract.transfer(msg.sender, amount.sub(vols)));
                         else{
-                            maintoken.coininvestment = maintoken.coininvestment.add(amount.sub(vols));
-                            basetoken.coininvestment = basetoken.coininvestment.sub(total);
+                            tokens[pairs[pairid].mainid].coininvestment = tokens[pairs[pairid].mainid].coininvestment.add(amount.sub(vols));
+                            tokens[pairs[pairid].baseid].coininvestment = tokens[pairs[pairid].baseid].coininvestment.sub(total);
                         }
                         emit TradeFill(pairid, pairs[pairid].askdom[p][n].addr, p, pairs[pairid].askdom[p][n].id, -1*int(pairs[pairid].askdom[p][n].amount));
                         ethacc = ethacc.add(total);
@@ -262,7 +262,7 @@ contract BluePool is Owned {
             total = total.shiftRight(80);
             //total is the fee
             require(msg.value.sub(ethacc) > total);
-            basetoken.cointotalfees.add(total);
+            tokens[pairs[pairid].baseid].cointotalfees.add(total);
             ethacc = ethacc.add(total);
             if (msg.value.sub(ethacc) > 0)
                 require(msg.sender.send(msg.value.sub(ethacc)));
