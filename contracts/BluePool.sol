@@ -109,7 +109,7 @@ contract BluePool is Owned {
     }
 
     function limitSell_token_eth(uint pairid, uint price, uint prevprice, uint amount, bool ini) public returns (bool success) {
-        Entry memory order;
+       // Entry memory order;
         uint total;
         uint fees;
         uint codeLength;
@@ -130,14 +130,14 @@ contract BluePool is Owned {
         uint next;
         var maintoken = tokens[pair.mainid];
         if (ini==false){
-            order.addr = msg.sender;
+             pair.askdom[price][ordercnt].addr = msg.sender;
             maintoken.coininvestment = maintoken.coininvestment.add(amount);
         }else
-            order.addr = address(this);
-        order.id = ordercnt;
-        order.initial = ini;
-        order.amount = amount;
-        pair.askdom[price][ordercnt] = order;
+             pair.askdom[price][ordercnt].addr = address(this);
+        pair.askdom[price][ordercnt].id = ordercnt;
+        pair.askdom[price][ordercnt].initial = ini;
+        pair.askdom[price][ordercnt].amount = amount;
+        //pair.askdom[price][ordercnt] = order;
 
         if (pair.askpricelist.nodeExists(price)==true){
             pair.askqueuelist[price].push(ordercnt,false);
