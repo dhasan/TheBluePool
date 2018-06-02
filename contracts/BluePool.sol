@@ -172,64 +172,63 @@ contract BluePool is Owned {
     function marketBuy_token_eth(uint pairid, uint price, uint amount, uint slippage, bool ini) public payable returns (bool success) {
         uint total;
         uint ethacc = 0;
-        uint codeLength;
-        address sender = msg.sender;
-        var pair = pairs[pairid];
-        require(pair.bestask!=0);
+
+        //var pair = pairs[pairid];
+        require( pairs[pairid].bestask!=0);
         assembly {
             //retrieve the size of the code on target address, this needs assembly
-            codeLength := extcodesize(sender)
+            total := extcodesize(caller)
         }
-        require(codeLength==0);
+        require(total==0);
 
         if (ini==true)
             require(msg.sender==owner);
         
-        if (price!=pair.bestask){
-            if (price>pair.bestask){
-                require((price.sub(pair.bestask)) < slippage);
+        if (price!=pairs[pairid].bestask){
+            if (price>pairs[pairid].bestask){
+                require((price.sub(pairs[pairid].bestask)) < slippage);
             }else{
-                require((pair.bestask.sub(price)) < slippage);
+                require((pairs[pairid].bestask.sub(price)) < slippage);
             }
         }
-        uint p = pair.bestask;
+        uint p = pairs[pairid].bestask;
         uint n;
         uint vols = 0;
         
-        var maintoken = tokens[pair.mainid];
-        var basetoken = tokens[pair.baseid];
+        var maintoken = tokens[pairs[pairid].mainid];
+        var basetoken = tokens[pairs[pairid].baseid];
         
         do {
             n=0;
             do {
-                n = pair.askqueuelist[p].step(n, true);
+                n = pairs[pairid].askqueuelist[p].step(n, true);
                 if (n!=0){
-                    if (pair.askdom[p][n].amount<=amount.sub(vols)){
-                        total = p.mul(pair.askdom[p][n].amount);
+                    if (pairs[pairid].askdom[p][n].amount<=amount.sub(vols)){
+                        total = p.mul(pairs[pairid].askdom[p][n].amount);
                         total = total.shiftRight(80);
 
-                        if (pair.askdom[p][n].initial==false)
-                            require(pair.askdom[p][n].addr.send(total));
+                        if (pairs[pairid].askdom[p][n].initial==false)
+                            require(pairs[pairid].askdom[p][n].addr.send(total));
                         else{
                             basetoken.coininvestment = basetoken.coininvestment.add(total);
-                            maintoken.coininvestment = maintoken.coininvestment.sub(pair.askdom[p][n].amount);
+                            maintoken.coininvestment = maintoken.coininvestment.sub(pairs[pairid].askdom[p][n].amount);
                         }
                         if (ini==false)
-                            require(maintoken.tokencontract.transfer(msg.sender, pair.askdom[p][n].amount));
+                            require(maintoken.tokencontract.transfer(msg.sender, pairs[pairid].askdom[p][n].amount));
                         else{
-                            maintoken.coininvestment = maintoken.coininvestment.add(pair.askdom[p][n].amount);
+                            maintoken.coininvestment = maintoken.coininvestment.add(pairs[pairid].askdom[p][n].amount);
                             basetoken.coininvestment = basetoken.coininvestment.sub(total);
                         }
-                        emit TradeFill(pairid, pair.askdom[p][n].addr, p, pair.askdom[p][n].id, -1*int(pair.askdom[p][n].amount));
+                        emit TradeFill(pairid, pairs[pairid].askdom[p][n].addr, p, pairs[pairid].askdom[p][n].id, -1*int(pairs[pairid].askdom[p][n].amount));
                         ethacc = ethacc.add(total);
 
-                        vols = vols.add(pair.askdom[p][n].amount);
-                        pair.askqueuelist[p].remove(n);
+                        vols = vols.add(pairs[pairid].askdom[p][n].amount);
+                        pairs[pairid].askqueuelist[p].remove(n);
                     }else{
                         total = p.mul(amount.sub(vols));
                         total = total.shiftRight(80);
-                        if (pair.askdom[p][n].initial==false)
-                            require(pair.askdom[p][n].addr.send(total));
+                        if (pairs[pairid].askdom[p][n].initial==false)
+                            require(pairs[pairid].askdom[p][n].addr.send(total));
                         else{
                             basetoken.coininvestment = basetoken.coininvestment.add(total);
                             maintoken.coininvestment = maintoken.coininvestment.sub(amount.sub(vols));
@@ -240,16 +239,16 @@ contract BluePool is Owned {
                             maintoken.coininvestment = maintoken.coininvestment.add(amount.sub(vols));
                             basetoken.coininvestment = basetoken.coininvestment.sub(total);
                         }
-                        emit TradeFill(pairid, pair.askdom[p][n].addr, p, pair.askdom[p][n].id, -1*int(pair.askdom[p][n].amount));
+                        emit TradeFill(pairid, pairs[pairid].askdom[p][n].addr, p, pairs[pairid].askdom[p][n].id, -1*int(pairs[pairid].askdom[p][n].amount));
                         ethacc = ethacc.add(total);
 
-                        pair.askdom[p][n].amount.sub(amount.sub(vols));
+                        pairs[pairid].askdom[p][n].amount.sub(amount.sub(vols));
                         vols = vols.add(amount.sub(vols));
                     }
                 }
             } while((n!=0) && (vols<amount));
             if (n==0){
-                p = pair.askpricelist.step(p,true); //ask is true
+                p = pairs[pairid].askpricelist.step(p,true); //ask is true
                 require(p!=0,"Not enought market volume");
                 require((p.sub(price)) < slippage);
             }
@@ -269,9 +268,9 @@ contract BluePool is Owned {
                 require(msg.sender.send(msg.value.sub(ethacc)));
 
         }
-        if (p!=pair.bestask){
-            pair.bestask=p;
-            emit Quotes(pairid, pair.bestask, pair.bestbid);
+        if (p!=pairs[pairid].bestask){
+            pairs[pairid].bestask=p;
+            emit Quotes(pairid, pairs[pairid].bestask, pairs[pairid].bestbid);
         }
         emit Trade(pairid, msg.sender, p, int(amount));
         success = true;
