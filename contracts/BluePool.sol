@@ -106,18 +106,19 @@ contract BluePool is Owneds {
         return tokens[tokenid].cointotalfees;
     }
 
-    function limitSell_token(uint pairid, uint price, uint prevprice, uint amount, bool ini) public returns (bool success) {
+    function limitSell_token_eth(uint pairid, uint price, uint prevprice, uint amount, bool ini) public returns (bool success) {
         Entry memory order;
         uint total;
         uint fees;
         uint codeLength;
+        uint sender = msg.sender;
         success = false;
         if (ini==true)
             require(msg.sender==owner,"Initial only for owner");
 
         assembly {
             //retrieve the size of the code on target address, this needs assembly
-            codeLength := extcodesize(msg.sender)
+            codeLength := extcodesize(sender)
         }
         require(codeLength==0);
 
@@ -125,9 +126,11 @@ contract BluePool is Owneds {
         require(price>pair.bestbid || pair.bestbid==0,"Invalid ask price");
         
         uint next;
-        if (ini==false)
+        var maintoken = tokens[pair.mainid];
+        if (ini==false){
             order.addr = msg.sender;
-        else
+            maintoken.coininvestment = maintoken.coininvestment.add(amount);
+        }else
             order.addr = address(this);
         order.id = ordercnt;
         order.initial = ini;
@@ -144,7 +147,7 @@ contract BluePool is Owneds {
             pair.askqueuelist[price].push(ordercnt,false);
         }
 
-        var maintoken = tokens[pair.mainid];
+        
         if (msg.sender!=owner){
             fees = amount.mul(makerfeeratio);
             fees = fees.shiftRight(80);
@@ -164,15 +167,16 @@ contract BluePool is Owneds {
         success = true;
     }
     
-    function marketBuy_eth(uint pairid, uint price, uint amount, uint slippage, bool ini) public payable returns (bool success) {
+    function marketBuy_token_eth(uint pairid, uint price, uint amount, uint slippage, bool ini) public payable returns (bool success) {
         uint total;
         uint ethacc = 0;
         uint codeLength;
+        uint sender = msg.sender;
         var pair = pairs[pairid];
         require(pair.bestask!=0);
         assembly {
             //retrieve the size of the code on target address, this needs assembly
-            codeLength := extcodesize(msg.sender)
+            codeLength := extcodesize(sender)
         }
         require(codeLength==0);
 
@@ -191,6 +195,7 @@ contract BluePool is Owneds {
         uint vols = 0;
         
         var maintoken = tokens[pair.mainid];
+        var basetoken = tokens[pair.baseid];
         
         do {
             n=0;
@@ -201,9 +206,18 @@ contract BluePool is Owneds {
                         total = p.mul(pair.askdom[p][n].amount);
                         total = total.shiftRight(80);
 
-                        require(pair.askdom[p][n].addr.send(total));
+                        if (pair.askdom[p][n].ini==false)
+                            require(pair.askdom[p][n].addr.send(total));
+                        else{
+                            basetoken.coininvestment = basetoken.coininvestment.add(total);
+                            maintoken.coininvestment = maintoken.coininvestment.sub(pair.askdom[p][n].amount);
+                        }
                         if (ini==false)
                             require(maintoken.tokencontract.transfer(msg.sender, pair.askdom[p][n].amount));
+                        else{
+                            maintoken.coininvestment = maintoken.coininvestment.add(pair.askdom[p][n].amount);
+                            basetoken.coininvestment = basetoken.coininvestment.sub(total);
+                        }
                         emit TradeFill(pairid, pair.askdom[p][n].addr, p, pair.askdom[p][n].id, -1*int(pair.askdom[p][n].amount));
                         ethacc = ethacc.add(total);
 
@@ -212,10 +226,18 @@ contract BluePool is Owneds {
                     }else{
                         total = p.mul(amount.sub(vols));
                         total = total.shiftRight(80);
-
-                        require(pair.askdom[p][n].addr.send(total));
+                        if (pair.askdom[p][n].ini==false)
+                            require(pair.askdom[p][n].addr.send(total));
+                        else{
+                            basetoken.coininvestment = basetoken.coininvestment.add(total);
+                            maintoken.coininvestment = maintoken.coininvestment.sub(amount.sub(vols));
+                        }
                         if (ini==false)
                             require(maintoken.tokencontract.transfer(msg.sender, amount.sub(vols)));
+                        else{
+                            maintoken.coininvestment = maintoken.coininvestment.add(amount.sub(vols));
+                            basetoken.coininvestment = basetoken.coininvestment.sub(total);
+                        }
                         emit TradeFill(pairid, pair.askdom[p][n].addr, p, pair.askdom[p][n].id, -1*int(pair.askdom[p][n].amount));
                         ethacc = ethacc.add(total);
 
@@ -232,7 +254,7 @@ contract BluePool is Owneds {
         }while(vols<amount);
         require((p.sub(price)) < slippage);
         if (msg.sender!=owner){
-            var basetoken = tokens[pair.baseid];
+            
             total = p.mul(amount);
             total = total.shiftRight(80);
             total = total.mul(takerfeeratio);
@@ -251,6 +273,10 @@ contract BluePool is Owneds {
         }
         emit Trade(pairid, msg.sender, p, int(amount));
         success = true;
+    }
+
+    function tokenFallback(uint tid, address from, uint amount){
+        
     }
    
     event Quotes(uint pairid, uint ask, uint bid);    

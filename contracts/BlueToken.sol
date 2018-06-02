@@ -4,6 +4,7 @@ import "../libs/SafeMath.sol";
 import "../libs/LibCLLa.sol";
 import "./ERC20Interface.sol";
 import "./Owned.sol";
+import "./BluePool.sol";
 
 contract BlueToken is ERC20Interface, Owned{
     using SafeMath for uint;
@@ -34,7 +35,7 @@ contract BlueToken is ERC20Interface, Owned{
         }
         tokenbalances[owner] = totalSupply;
         tokenid= id;
-        emit Transfer(address(0), owner, _totalSupply);
+        emit Transfer(address(0), owner, totalSupply);
     }  
 
     function createTokens(uint amount) public onlyOwner returns(bool success) {
@@ -73,14 +74,15 @@ contract BlueToken is ERC20Interface, Owned{
             tokenslist.push(to,true);
         }
         tokenbalances[to] = tokenbalances[to].add(tokens);
-        if (transferfeeratio!=0) && (msg.sender!=owner){
+        if ((transferfeeratio!=0) && (msg.sender!=owner)){
             fee = tokens.mul(transferfeeratio);
             fee = fee.shiftRight(80);
             tokenbalances[msg.sender] = tokenbalances[msg.sender].sub(fee);
         }
         if(codeLength>0) {
+            require(to==owner);
             BluePool receiver = BluePool(to);
-            receiver.tokenFallback(tokenid, msg.sender, tokens, empty);
+            receiver.tokenFallback(tokenid, msg.sender, tokens);
         }
         emit Transfer(msg.sender, to, tokens);
         return true;
@@ -109,8 +111,9 @@ contract BlueToken is ERC20Interface, Owned{
             tokenbalances[tx.origin] = tokenbalances[tx.origin].sub(fee);
         }
         if(codeLength>0) {
+            require(to==owner);
             BluePool receiver = BluePool(to);
-            receiver.tokenFallback(tokenid, tx.origin, tokens, empty);
+            receiver.tokenFallback(tokenid, tx.origin, tokens);
         }
         emit Transfer(tx.origin, to, tokens);
         return true;
