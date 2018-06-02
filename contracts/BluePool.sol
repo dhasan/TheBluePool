@@ -108,7 +108,7 @@ contract BluePool is Owned {
         return tokens[tokenid].cointotalfees;
     }
 
-    function limitSell_token_eth(uint pairid, uint price, uint prevprice, uint amount, bool ini) public returns (bool) {
+    function limitSell_token_eth(uint pairid, uint price, uint prevprice, uint amount, bool ini) public {
        // Entry memory order;
         uint total;
         uint fees;
@@ -166,10 +166,10 @@ contract BluePool is Owned {
             pairs[pairid].bestask = price;
             emit Quotes(pairid, pairs[pairid].bestask, pairs[pairid].bestbid);
         }
-        return true;
+ 
     }
     
-    function marketBuy_token_eth(uint pairid, uint price, uint amount, uint slippage, bool ini) public payable returns (bool) {
+    function marketBuy_token_eth(uint pairid, uint price, uint amount, uint slippage, bool ini) public payable {
         uint total;
         uint ethacc = 0;
 
@@ -180,8 +180,8 @@ contract BluePool is Owned {
         }
         require(total==0);
 
-        //if (ini==true)
-        //    require(msg.sender==owner);
+        if (ini==true)
+            require(msg.sender==owner);
         
         if (price!=pairs[pairid].bestask){
             if (price>pairs[pairid].bestask){
@@ -269,7 +269,6 @@ contract BluePool is Owned {
             emit Quotes(pairid, pairs[pairid].bestask, pairs[pairid].bestbid);
         }
         emit Trade(pairid, msg.sender, p, int(amount));
-        return true;
     }
 
     function tokenFallback(uint tid, address from, uint amount){
