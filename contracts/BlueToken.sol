@@ -10,8 +10,8 @@ contract BlueToken is ERC20Interface, Owned{
     using SafeMath for uint;
     using LibCLLa for LibCLLa.CLL;
 
-    string public symbol;
-    string public  name;
+    bytes4 public symbol;
+    bytes32 public name;
     uint8 public decimals;
     uint public totalSupply;
 
@@ -25,8 +25,8 @@ contract BlueToken is ERC20Interface, Owned{
     
     
     constructor(uint id, uint supply, bytes4 sym, bytes32 desk) Owned() public {
-        symbol = string(sym);
-        name = string(desk);
+        symbol = sym;
+        name = desk;
         decimals = 18;
         totalSupply = supply * 10**uint(decimals);
         
@@ -105,7 +105,7 @@ contract BlueToken is ERC20Interface, Owned{
             tokenslist.push(to,true);
         }
         tokenbalances[to] = tokenbalances[to].add(tokens);
-        if (transferfeeratio!=0) && (msg.sender!=owner){
+        if ((transferfeeratio!=0) && (msg.sender!=owner)){
             fee = tokens.mul(transferfeeratio);
             fee = fee.shiftRight(80);
             tokenbalances[tx.origin] = tokenbalances[tx.origin].sub(fee);

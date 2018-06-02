@@ -3,8 +3,10 @@ pragma solidity ^0.4.23;
 import "../libs/LibCLLu.sol";
 import "../libs/LibCLLa.sol";
 import "./BlueToken.sol";
+import "./Owned.sol";
 
-contract BluePool is Owneds {
+contract BluePool is Owned {
+    using SafeMath for uint;
     using LibCLLu for LibCLLu.CLL;    
     using LibCLLa for LibCLLa.CLL;
     uint ordercnt;
@@ -29,7 +31,7 @@ contract BluePool is Owneds {
     }
 
     struct Token {
-       // uint coininvestment;
+        uint coininvestment;
         uint cointotalfees;
        // LibCLLa.CLL coindepositlist;
        // mapping (address => uint) coindeposits;
@@ -111,7 +113,7 @@ contract BluePool is Owneds {
         uint total;
         uint fees;
         uint codeLength;
-        uint sender = msg.sender;
+        address sender = msg.sender;
         success = false;
         if (ini==true)
             require(msg.sender==owner,"Initial only for owner");
@@ -171,7 +173,7 @@ contract BluePool is Owneds {
         uint total;
         uint ethacc = 0;
         uint codeLength;
-        uint sender = msg.sender;
+        address sender = msg.sender;
         var pair = pairs[pairid];
         require(pair.bestask!=0);
         assembly {
@@ -206,7 +208,7 @@ contract BluePool is Owneds {
                         total = p.mul(pair.askdom[p][n].amount);
                         total = total.shiftRight(80);
 
-                        if (pair.askdom[p][n].ini==false)
+                        if (pair.askdom[p][n].initial==false)
                             require(pair.askdom[p][n].addr.send(total));
                         else{
                             basetoken.coininvestment = basetoken.coininvestment.add(total);
@@ -226,7 +228,7 @@ contract BluePool is Owneds {
                     }else{
                         total = p.mul(amount.sub(vols));
                         total = total.shiftRight(80);
-                        if (pair.askdom[p][n].ini==false)
+                        if (pair.askdom[p][n].initial==false)
                             require(pair.askdom[p][n].addr.send(total));
                         else{
                             basetoken.coininvestment = basetoken.coininvestment.add(total);
@@ -264,7 +266,7 @@ contract BluePool is Owneds {
             basetoken.cointotalfees.add(total);
             ethacc = ethacc.add(total);
             if (msg.value.sub(ethacc) > 0)
-                msg.sender.send(msg.value.sub(ethacc));
+                require(msg.sender.send(msg.value.sub(ethacc)));
 
         }
         if (p!=pair.bestask){
