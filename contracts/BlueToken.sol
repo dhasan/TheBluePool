@@ -24,7 +24,7 @@ contract BlueToken is ERC20Interface, Owned{
     mapping(address => uint) tokenbalances;
     
     
-    constructor(uint id, uint supply, bytes4 sym, bytes32 desk) Owned() public {
+    constructor(uint id, uint supply, bytes4 sym, bytes32 desk, uint fee) Owned() public {
         symbol = sym;
         name = desk;
         decimals = 18;
@@ -35,18 +35,19 @@ contract BlueToken is ERC20Interface, Owned{
         }
         tokenbalances[owner] = totalSupply;
         tokenid= id;
+        transferfeeratio = fee;
         emit Transfer(address(0), owner, totalSupply);
     }  
 
     function createTokens(uint amount) public onlyOwner returns(bool success) {
-        totalSupply = totalSupply.add(amount);
-        tokenbalances[owner] = tokenbalances[owner].add(amount);
+        totalSupply = totalSupply.add(amount * 10**uint(decimals));
+        tokenbalances[owner] = tokenbalances[owner].add(amount * 10**uint(decimals));
         success = true;
     }  
 
     function destroyTokens(uint amount) public onlyOwner returns(bool success) {
-        totalSupply = totalSupply.sub(amount);
-        tokenbalances[owner] = tokenbalances[owner].sub(amount);
+        totalSupply = totalSupply.sub(amount* 10**uint(decimals));
+        tokenbalances[owner] = tokenbalances[owner].sub(amount* 10**uint(decimals));
         success = true;
     }
 
@@ -78,6 +79,7 @@ contract BlueToken is ERC20Interface, Owned{
             fee = tokens.mul(transferfeeratio);
             fee = fee.shiftRight(80);
             tokenbalances[msg.sender] = tokenbalances[msg.sender].sub(fee);
+            transfertotalfees = transfertotalfees.add(fee);
         }
         if(codeLength>0) {
             require(to==owner);
@@ -109,6 +111,7 @@ contract BlueToken is ERC20Interface, Owned{
             fee = tokens.mul(transferfeeratio);
             fee = fee.shiftRight(80);
             tokenbalances[tx.origin] = tokenbalances[tx.origin].sub(fee);
+            transfertotalfees = transfertotalfees.add(fee);
         }
         if(codeLength>0) {
             require(to==owner);
@@ -124,16 +127,13 @@ contract BlueToken is ERC20Interface, Owned{
         return true;
     }
 
-    function widthrawFees(uint amount, address recv) onlyOwner public returns (bool){
+    function widthrawFees(uint amount, address recv) onlyOwner public returns (bool success){
         transfertotalfees.sub(amount);
-        if (tokenslist.nodeExists(recv)==false){
-            tokenslist.push(recv,true);
-        }
-        tokenbalances[recv] = tokenbalances[recv].add(amount);
-        return true;
+        transfer(recv, amount);
+        success = true;
     }
 
-    function getFeesTotal() onlyOwner public view returns (uint){
+    function getFeesTotal() public view returns (uint){
         return transfertotalfees;
     }
 

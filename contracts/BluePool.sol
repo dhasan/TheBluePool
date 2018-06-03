@@ -44,18 +44,20 @@ contract BluePool is Owned {
     uint takerfeeratio;
     uint makerfeeratio;
    
-    constructor() Owned() public {
+    constructor(uint takerratio, uint makerratio) Owned() public {
         ordercnt = 1;
         Token memory t;
         tokens.push(t);
+        makerfeeratio = makerratio;
+        takerfeeratio = takerratio;
 
     }   
-    function createToken(bytes4 name, bytes32 desc, uint supply) public onlyOwner returns(uint){
+    function createToken(bytes4 name, bytes32 desc, uint supply, uint tfee) public onlyOwner returns(uint){
         Token memory t;
-        t.tokencontract = new BlueToken(tokens.length, supply, name, desc);
-        return tokens.push(t) - 1;
+        t.tokencontract = new BlueToken(tokens.length, supply, name, desc, tfee);
+        tokens.push(t);
     }  
-    function createPair(bytes8 _name, uint m, uint b) public onlyOwner returns(uint){
+    function createPair(bytes8 _name, uint m, uint b) public onlyOwner{
         Pair memory p;
         require(m!=b);
         require((tokens.length) > m);
@@ -65,33 +67,42 @@ contract BluePool is Owned {
         p.baseid = b;
         p.bestask = 0;
         p.bestbid = 0;
-        return pairs.push(p) - 1;
+        pairs.push(p);
+    }
+    function generateTokens(uint tid, uint amount) onlyOwner public {
+        require(tid>0);
+        require(tokens[tid].tokencontract.createTokens(amount));
+    }
+    function destroyTokens(uint tid, uint amount) onlyOwner public {
+        require(tid>0);
+        require(tokens[tid].tokencontract.destroyTokens(amount));
+    }
+    function getPairTokenIds(uint pairid) public view returns(uint[2]){
+        return [pairs[pairid].mainid, pairs[pairid].baseid];
+    }
+    function getPairName(uint pairid) public view returns(bytes8){
+        returns pairs[pairid].name;
     }
 
-    function getPrices(uint pairid) public view returns(uint[2]){
-        var pair = pairs[pairid];
-    	return [pair.bestask, pair.bestbid];
+    function getPrices(uint pairid) public view returns(uint[2]){    
+    	return [pairs[pairid].bestask, pairs[pairid].bestbid];
     }
-    function getPrevAsk(uint pairid, uint price) public view returns (uint){
-        var pair = pairs[pairid];
-        return pair.askpricelist.seek(0,price,true);
+    function getPrevAsk(uint pairid, uint price) public view returns (uint){     
+        return pairs[pairid].askpricelist.seek(0,price,true);
     }
     function askPriceExists(uint pairid, uint price) public view returns(bool){
-        var pair = pairs[pairid];
-        return pair.askpricelist.nodeExists(price);
+        return pairs[pairid].askpricelist.nodeExists(price);
     }
     function getAskDOMPrice(uint pairid, uint prevprice, bool dir) public view returns(uint){
-        var pair = pairs[pairid];
-        return pair.askpricelist.step(prevprice,dir);    
+        return pairs[pairid].askpricelist.step(prevprice,dir);    
     }
     function getAskDOMVolume(uint pairid, uint price) public view returns(uint){
-        var pair = pairs[pairid];
-        uint n = pair.askqueuelist[price].step(0,true);
+        uint n = pairs[pairid].askqueuelist[price].step(0,true);
         if (n==0) return 0;
-        uint acc = pair.askdom[price][n].amount;
+        uint acc = pairs[pairid].askdom[price][n].amount;
         while(n!=0){
-            n = pair.askqueuelist[price].step(n,true);
-            acc = acc.add(pair.askdom[price][n].amount);
+            n = pairs[pairid].askqueuelist[price].step(n,true);
+            acc = acc.add(pairs[pairid].askdom[price][n].amount);
         }
         return acc;
     }
@@ -112,9 +123,7 @@ contract BluePool is Owned {
        // Entry memory order;
         uint total;
         uint fees;
-       // uint codeLength;
-        //address sender = msg.sender;
-        //success = false;
+
         if (ini==true)
             require(msg.sender==owner,"Initial only for owner");
 
@@ -123,17 +132,15 @@ contract BluePool is Owned {
             total := extcodesize(caller)
         }
         require(total==0);
-
-        //var pair = pairs[pairid];
         require(price>pairs[pairid].bestbid || pairs[pairid].bestbid==0,"Invalid ask price");
         
-        //uint next;
-        var maintoken = tokens[pairs[pairid].mainid];
         if (ini==false){
-             pairs[pairid].askdom[price][ordercnt].addr = msg.sender;
-            maintoken.coininvestment = maintoken.coininvestment.add(amount);
-        }else
-             pairs[pairid].askdom[price][ordercnt].addr = address(this);
+            pairs[pairid].askdom[price][ordercnt].addr = msg.sender;
+            
+        }else{
+            pairs[pairid].askdom[price][ordercnt].addr = address(this);
+            tokens[pairs[pairid].mainid].coininvestment = tokens[pairs[pairid].mainid].coininvestment.add(amount);
+        }
         pairs[pairid].askdom[price][ordercnt].id = ordercnt;
         pairs[pairid].askdom[price][ordercnt].initial = ini;
         pairs[pairid].askdom[price][ordercnt].amount = amount;
@@ -149,24 +156,24 @@ contract BluePool is Owned {
             pairs[pairid].askqueuelist[price].push(ordercnt,false);
         }
 
-        
         if (msg.sender!=owner){
             fees = amount.mul(makerfeeratio);
             fees = fees.shiftRight(80);
-            maintoken.cointotalfees = maintoken.cointotalfees.add(fees);
+            tokens[pairs[pairid].mainid].cointotalfees = tokens[pairs[pairid].mainid].cointotalfees.add(fees);
         }else{
             fees = 0;
         }
         total = fees.add(amount);
         if (ini==false)
-            maintoken.tokencontract.transfer_origin(address(this), total);
+            tokens[pairs[pairid].mainid].tokencontract.transfer_origin(address(this), total);
 
-        ordercnt++;
         if (price<pairs[pairid].bestask || pairs[pairid].bestask==0){
             pairs[pairid].bestask = price;
             emit Quotes(pairid, pairs[pairid].bestask, pairs[pairid].bestbid);
         }
- 
+
+        emit PlaceOrder(pairid, msg.sender, price, ordercnt );
+        ordercnt++;
     }
     
     function marketBuy_token_eth(uint pairid, uint price, uint amount, uint slippage, bool ini) public payable {
@@ -183,7 +190,7 @@ contract BluePool is Owned {
         if (ini==true)
             require(msg.sender==owner);
         
-        if (price!=pairs[pairid].bestask){
+        if ((price!=pairs[pairid].bestask) && (slippage!=0)){
             if (price>pairs[pairid].bestask){
                 require((price.sub(pairs[pairid].bestask)) < slippage);
             }else{
@@ -246,10 +253,12 @@ contract BluePool is Owned {
             if (n==0){
                 p = pairs[pairid].askpricelist.step(p,true); //ask is true
                 require(p!=0,"Not enought market volume");
-                require((p.sub(price)) < slippage);
+                if (slippage!=0)
+                    require((p.sub(price)) < slippage);
             }
         }while(vols<amount);
-        require((p.sub(price)) < slippage);
+        if (slippage!=0)
+            require((p.sub(price)) < slippage);
         if (msg.sender!=owner){
             
             total = p.mul(amount);
@@ -271,6 +280,52 @@ contract BluePool is Owned {
         emit Trade(pairid, msg.sender, p, int(amount));
     }
 
+    function depositInvestmentETH() onlyOwner public payable{
+        tokens[0].coininvestment = tokens[0].coininvestment.add(msg.value);
+    }
+
+    function withdrawInvestmentETH(uint amount) onlyOwner public {
+        require(owner.send(amount));
+        tokens[0].coininvestment = tokens[0].coininvestment.sub(amount);
+    }
+
+    function depositInvestment(uint tid, uint amount) onlyOwner public {
+        require(tid>0);
+        tokens[tid].coininvestment = tokens[tid].coininvestment.add(amount);
+        require(tokens[tid].tokencontract.transfer_origin(address(this), amount));
+    }
+    function withdrawInvestment(uint tid, uint amount) onlyOwner public {
+        require(tid>0);
+        tokens[tid].coininvestment = tokens[tid].coininvestment.sub(amount);
+        require(tokens[tid].tokencontract.transfer(owner, amount));
+    }
+
+    function getInvestment(uint tid) public view returns(uint) {
+        require(tid>0);
+        return tokens[tid].coininvestment;
+    }
+
+    function withdrawFeesETH(uint amount) onlyOwner public {
+        require(owner.send(amount));
+        tokens[0].cointotalfees = tokens[0].cointotalfees.sub(amount);
+    }
+
+    function withdrawFees(uint tid, uint amount) onlyOwner public {
+        require(tid>0);
+        tokens[tid].cointotalfees = tokens[tid].cointotalfees.sub(amount);
+        require(tokens[tid].tokencontract.transfer(owner, amount));
+    }
+
+    function withdrawTransFees(uint tid, uint amount) onlyOwner public {
+        require(tid>0);
+        require(tokens[tid].tokencontract.widthrawFees(owner, amount));
+    }
+
+    function setTransFeeRatio(uint tid, uint val) onlyOwner public {
+        require(tid>0);
+        require(tokens[tid].tokencontract.setFeeRatio(val));
+    }
+
     function tokenFallback(uint tid, address from, uint amount) public {
         
     }
@@ -278,4 +333,5 @@ contract BluePool is Owned {
     event Quotes(uint pairid, uint ask, uint bid);    
     event TradeFill(uint indexed pairid, address indexed addr, uint id, int amount);
     event Trade(uint pairid, address addr, uint price, int amount);
+    event PlaceOrder(uint indexed pairid, address indexed addr, uint indexed price, uint id);
 }
