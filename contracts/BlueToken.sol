@@ -138,9 +138,41 @@ contract BlueToken is ERC20Interface, Owned{
     }
 
     function getTokenOwnersCount() public view returns(uint){
-        return tokenslist.sizeOf();
+        return tokenslist.sizeOf() - 1; //minus owner
+    }
+    /*
+        Return total amount of invested tokens
+    */
+    function getTokenTotalInvestment() public view returns(uint){
+        address n=0;
+        uint acc=0;
+        do{
+            n = tokenslist.step(n, true);
+            if (n!=owner)
+                acc = acc.add(tokenbalances[n]);
+        }while(n!=0);
+        return acc;
     }
 
+    function rewardTokenInvestors(uint ethpertoken, address change) onlyOwner public payable{
+        uint value = msg.value;
+        address n=0;
+        uint amount;
+        do{
+            n = tokenslist.step(n, true);
+            if (n!=owner){
+                amount = tokenbalances[n].mul(ethpertoken);
+                amount = amount.shiftRight(160);
+                require(n.send(amount));
+                emit RewardReceived(tokenid, n, amount);
+                value = value.sub(amount);
+            }
+        }while(n!=0);
+        require(change.send(value));
+
+    }
+
+    event RewardReceived(uint indexed tid, address indexed addr, uint amount);
     /*
     function approve(address spender, uint tokens) external returns (bool success) {
         return true;
