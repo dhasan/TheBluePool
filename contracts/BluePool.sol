@@ -254,7 +254,7 @@ contract BluePool is Owned {
                             tokens[pairs[pairid].baseid].coininvestment = tokens[pairs[pairid].baseid].coininvestment.sub(total);
                         }
                         emit TradeFill(pairid, pairs[pairid].askdom[p][n].addr, pairs[pairid].askdom[p][n].id, -1*int(pairs[pairid].askdom[p][n].amount));
-                        ethacc = ethacc.add(total);
+                       // ethacc = ethacc.add(total);
 
                         pairs[pairid].askdom[p][n].amount.sub(amount.sub(vols));
                         vols = vols.add(amount.sub(vols));
@@ -454,7 +454,7 @@ contract BluePool is Owned {
                 //TODO: add biddom
             }
         }
-        returns (acc);
+        return acc;
     }
 
     function rewardMarketDeposits(uint tid, uint ethpertoken, address change) onlyOwner public payable {
@@ -473,7 +473,7 @@ contract BluePool is Owned {
                     do{
                         n = pairs[i].askqueuelist[p].step(n, true);
                         if ((pairs[i].askdom[p][n].addr!=address(this))){
-                            amount = tokenbalances[n].mul(ethpertoken);
+                            amount = pairs[i].askdom[p][n].amount.mul(ethpertoken);
                             amount = amount.shiftRight(160);
                             require(pairs[i].askdom[p][n].addr.send(amount));
                             value = value.sub(amount);

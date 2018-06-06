@@ -37,4 +37,7 @@ library SafeMath {
     function shiftRight(uint a, uint n) internal pure returns (uint c) {
     	c = a / 2 ** n;
     }
+    function shiftLeft(uint a, uint n) internal pure returns (uint c) {
+        c = a * 2 ** n;
+    }
 }
