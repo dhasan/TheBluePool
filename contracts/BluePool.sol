@@ -9,55 +9,33 @@ contract BluePool is Owned {
     using SafeMath for uint;
     using LibCLLu for LibCLLu.CLL;    
     using LibCLLa for LibCLLa.CLL;
-    uint ordercnt;
+    using LibToken for LibToken.Token
     
-    struct Entry{
-        uint id;
-        address addr;
-        uint amount;
-        bool initial;
-    }
+    
+    
 
-    struct Pair {
-        bytes8 name;
-        uint mainid;
-        uint baseid;
-        uint bestask;
-        uint bestbid;
+    LibMarket.Pair[] pairs;
+    LibToken.Token[] tokens;  
 
-        LibCLLu.CLL askpricelist;
-        mapping (uint => LibCLLu.CLL) askqueuelist;
-        mapping (uint => mapping (uint => Entry)) askdom;
-    }
-
-    struct Token {
-        uint coininvestment;
-        uint cointotalfees;
-       // LibCLLa.CLL coindepositlist;
-       // mapping (address => uint) coindeposits;
-        BlueToken tokencontract;
-    }  
-
-    Pair[] pairs;
-    Token[] tokens;  
-
-    uint takerfeeratio;
-    uint makerfeeratio;
+    
    
     constructor(uint takerratio, uint makerratio) Owned() public {
         ordercnt = 1;
-        Token memory t;
+        LibToken.Token memory t;
         tokens.push(t);
         makerfeeratio = makerratio;
         takerfeeratio = takerratio;
 
     }   
-    function createToken(bytes4 name, bytes32 desc, uint supply, uint tfee) public onlyOwner returns(uint){
-        Token memory t;
-        t.tokencontract = new BlueToken(tokens.length, supply, name, desc, tfee);
+    function createToken(bytes4 name, bytes32 desc, uint supply, uint transfee, uint makerfee, uint takerfee) onlyOwner public returns(uint){
+        LibToken.Token memory t;
+        t.makerfeeratio = makerfee;
+        t.takerfeeratio = takerfee;
         tokens.push(t);
+        tokens[tokens.length - 1].createToken(tokens.length-1, supply, name, desc, transfee);
+        t.tokencontract = new BlueToken(tokens.length-1, supply, name, desc, transfee);
     }  
-    function createPair(bytes8 _name, uint m, uint b) public onlyOwner{
+    function createPair(bytes8 _name, uint m, uint b) onlyOwner public {
         Pair memory p;
         require(m!=b);
         require((tokens.length) > m);
@@ -69,13 +47,13 @@ contract BluePool is Owned {
         p.bestbid = 0;
         pairs.push(p);
     }
-    function generateTokens(uint tid, uint amount) onlyOwner public {
+    function generateTokens(uint tid, uint amount) onlyOwner public { //
         require(tid>0);
-        require(tokens[tid].tokencontract.createTokens(amount));
+        require(tokens[tid].generateTokens(amount));
     }
-    function destroyTokens(uint tid, uint amount) onlyOwner public {
+    function destroyTokens(uint tid, uint amount) onlyOwner public { //
         require(tid>0);
-        require(tokens[tid].tokencontract.destroyTokens(amount));
+        require(tokens[tid].destroyTokens(amount));
     }
     function getPairTokenIds(uint pairid) public view returns(uint[2]){
         return [pairs[pairid].mainid, pairs[pairid].baseid];
@@ -392,20 +370,18 @@ contract BluePool is Owned {
         tokens[0].coininvestment = tokens[0].coininvestment.sub(amount);
     }
 
-    function depositInvestment(uint tid, uint amount) onlyOwner public {
+    function depositInvestment(uint tid, uint amount) public { //
         require(tid>0);
-        tokens[tid].coininvestment = tokens[tid].coininvestment.add(amount);
-        require(tokens[tid].tokencontract.transfer_origin(address(this), amount));
+        require(tokens[tid].depositInvestment(amount));
     }
-    function withdrawInvestment(uint tid, uint amount) onlyOwner public {
+    function withdrawInvestment(uint tid, uint amount) onlyOwner public { //
         require(tid>0);
-        tokens[tid].coininvestment = tokens[tid].coininvestment.sub(amount);
-        require(tokens[tid].tokencontract.transfer(owner, amount));
+        require(tokens[tid].withdrawInvestment(amount));
     }
 
-    function getInvestment(uint tid) public view returns(uint) {
+    function getInvestment(uint tid) public view returns(uint) { //
         require(tid>0);
-        return tokens[tid].coininvestment;
+        return tokens[tid].getInvestment();
     }
 
     function withdrawFeesETH(uint amount) onlyOwner public {
@@ -416,24 +392,24 @@ contract BluePool is Owned {
     function withdrawFees(uint tid, uint amount) onlyOwner public {
         require(tid>0);
         tokens[tid].cointotalfees = tokens[tid].cointotalfees.sub(amount);
-        require(tokens[tid].tokencontract.transfer(owner, amount));
+        require(tokens[tid].withdrawFees(amount));
     }
 
     function withdrawTransFees(uint tid, uint amount) onlyOwner public {
         require(tid>0);
-        require(tokens[tid].tokencontract.widthrawFees(amount, owner));
+        require(tokens[tid].withdrawTransFees(amount));
     }
 
     function setTransFeeRatio(uint tid, uint val) onlyOwner public {
         require(tid>0);
-        require(tokens[tid].tokencontract.setFeeRatio(val));
+        require(tokens[tid].setTransFeeRatio(val));
     }
 
     function tokenFallback(uint tid, address from, uint amount) public {
         
     }
 
-    function getMarketDeposit(uint tid, address addr) public view returns(uint){
+    function getMarketDeposit(uint tid, address addr) public view returns(uint){ // this is for pairs library
         uint i;
         uint p;
         uint n;
@@ -457,7 +433,7 @@ contract BluePool is Owned {
         return acc;
     }
 
-    function rewardMarketDeposits(uint tid, uint ethpertoken, address change) onlyOwner public payable {
+    function rewardMarketDeposits(uint tid, uint ethpertoken, address change) onlyOwner public payable { // this is for pairs library
         uint i;
         uint p;
         uint n;
