@@ -19,33 +19,27 @@ contract BluePool is Owned {
 
     
    
-    constructor(uint takerratio, uint makerratio) Owned() public {
+    constructor(/*uint takerratio, uint makerratio*/) Owned() public {
         ordercnt = 1;
         LibToken.Token memory t;
         tokens.push(t);
-        makerfeeratio = makerratio;
-        takerfeeratio = takerratio;
+        //makerfeeratio = makerratio;
+        //takerfeeratio = takerratio;
 
     }   
-    function createToken(bytes4 name, bytes32 desc, uint supply, uint transfee, uint makerfee, uint takerfee) onlyOwner public returns(uint){
+    function createToken(bytes4 name, bytes32 desc, uint supply, uint transfee/*, uint makerfee, uint takerfee*/) onlyOwner public returns(uint){
         LibToken.Token memory t;
-        t.makerfeeratio = makerfee;
-        t.takerfeeratio = takerfee;
         tokens.push(t);
-        tokens[tokens.length - 1].createToken(tokens.length-1, supply, name, desc, transfee);
-        t.tokencontract = new BlueToken(tokens.length-1, supply, name, desc, transfee);
+        require(tokens[tokens.length - 1].createToken(tokens.length-1, supply, name, desc, transfee));
+        
     }  
-    function createPair(bytes8 _name, uint m, uint b) onlyOwner public {
+    function createPair(bytes8 _name, uint m, uint b, uint makerfee, uint takerfee) onlyOwner public {
         Pair memory p;
         require(m!=b);
         require((tokens.length) > m);
         require((tokens.length) > b);
-        p.name = _name;
-        p.mainid = m;
-        p.baseid = b;
-        p.bestask = 0;
-        p.bestbid = 0;
         pairs.push(p);
+        require(tokens[tokens.length - 1].createPair(_name, m, b,makerfee, takerfee));
     }
     function generateTokens(uint tid, uint amount) onlyOwner public { //
         require(tid>0);
@@ -56,102 +50,48 @@ contract BluePool is Owned {
         require(tokens[tid].destroyTokens(amount));
     }
     function getPairTokenIds(uint pairid) public view returns(uint[2]){
-        return [pairs[pairid].mainid, pairs[pairid].baseid];
+        return pairs[pairid].getPairTokenIds();
     }
     function getPairName(uint pairid) public view returns(bytes8){
-        return pairs[pairid].name;
+        return pairs[pairid].getPairName();
     }
 
     function getPrices(uint pairid) public view returns(uint[2]){    
-    	return [pairs[pairid].bestask, pairs[pairid].bestbid];
+    	return pairs[pairid].getPrices();
     }
     function getPrevAsk(uint pairid, uint price) public view returns (uint){     
-        return pairs[pairid].askpricelist.seek(0,price,true);
+        return pairs[pairid].getPrevAsk(price);
     }
     function askPriceExists(uint pairid, uint price) public view returns(bool){
-        return pairs[pairid].askpricelist.nodeExists(price);
+        return pairs[pairid].askPriceExists(price);
     }
-    function getAskDOMPrice(uint pairid, uint prevprice, bool dir) public view returns(uint){
-        return pairs[pairid].askpricelist.step(prevprice,dir);    
+    function getAskDOMPrice(uint pairid, uint prevprice) public view returns(uint){
+        return pairs[pairid].getAskDOMPrice(prevprice);    
     }
     function getAskDOMVolume(uint pairid, uint price) public view returns(uint){
-        uint n = pairs[pairid].askqueuelist[price].step(0,true);
-        if (n==0) return 0;
-        uint acc = pairs[pairid].askdom[price][n].amount;
-        while(n!=0){
-            n = pairs[pairid].askqueuelist[price].step(n,true);
-            acc = acc.add(pairs[pairid].askdom[price][n].amount);
-        }
-        return acc;
+        return pairs[pairid].getAskDOMVolume(price);
     }
-    function getFeesRatios() public view returns(uint[2]){
-        return [makerfeeratio, takerfeeratio];
+    function getFeesRatios(uint pairid) public view returns(uint[2]){
+        return pairs[pairid].getFeesRatios();
     }
-    function setFeeRatios(uint maker, uint taker) public onlyOwner returns(bool){
-        makerfeeratio = maker;
-        takerfeeratio = taker;
-        return true;
-    }
+    // function setFeeRatios(uint maker, uint taker) public onlyOwner returns(bool){
+    //     makerfeeratio = maker;
+    //     takerfeeratio = taker;
+    //     return true;
+    // }
 
     function getFeesTotal(uint tokenid) public view onlyOwner returns(uint) {
         return tokens[tokenid].cointotalfees;
     }
 
     function limitSell_token_x(uint pairid, uint price, uint prevprice, uint amount, bool ini) public {
-       // Entry memory order;
-        uint total;
-        uint fees;
 
         if (ini==true)
             require(msg.sender==owner,"Initial only for owner");
 
-        assembly {
-            //retrieve the size of the code on target address, this needs assembly
-            total := extcodesize(caller)
-        }
-        require(total==0);
-        require(price>pairs[pairid].bestbid || pairs[pairid].bestbid==0,"Invalid ask price");
-        
-        if (ini==false){
-            pairs[pairid].askdom[price][ordercnt].addr = msg.sender;
-            
-        }else{
-            pairs[pairid].askdom[price][ordercnt].addr = address(this);
-            tokens[pairs[pairid].mainid].coininvestment = tokens[pairs[pairid].mainid].coininvestment.add(amount);
-        }
-        pairs[pairid].askdom[price][ordercnt].id = ordercnt;
-        pairs[pairid].askdom[price][ordercnt].initial = ini;
-        pairs[pairid].askdom[price][ordercnt].amount = amount;
-        //pair.askdom[price][ordercnt] = order;
+        pairs[pairid].limitSell_token_x(tokens[pairs[pairid].mainid], tokens[pairs[pairid].baseid], price, prevprice,amount, ini);
 
-        if (pairs[pairid].askpricelist.nodeExists(price)==true){
-            pairs[pairid].askqueuelist[price].push(ordercnt,false);
-        }else{
-            require(price>prevprice,"Wrong price 1");
-            total = pairs[pairid].askpricelist.step(prevprice,true);
-            require(price<total,"Wrong price 2");//total=next;
-            pairs[pairid].askpricelist.insert(prevprice,price,true);
-            pairs[pairid].askqueuelist[price].push(ordercnt,false);
-        }
-
-        if (msg.sender!=owner){
-            fees = amount.mul(makerfeeratio);
-            fees = fees.shiftRight(80);
-            tokens[pairs[pairid].mainid].cointotalfees = tokens[pairs[pairid].mainid].cointotalfees.add(fees);
-        }else{
-            fees = 0;
-        }
-        total = fees.add(amount);
-        if (ini==false)
-            tokens[pairs[pairid].mainid].tokencontract.transfer_origin(address(this), total);
-
-        if (price<pairs[pairid].bestask || pairs[pairid].bestask==0){
-            pairs[pairid].bestask = price;
-            emit Quotes(pairid, pairs[pairid].bestask, pairs[pairid].bestbid);
-        }
-
-        emit PlaceOrder(pairid, msg.sender, price, ordercnt );
-        ordercnt++;
+       
     }
 
     function marketBuyFull_token_eth(uint pairid, uint price, uint slippage, bool ini) public payable {

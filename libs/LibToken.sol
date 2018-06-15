@@ -1,20 +1,19 @@
 pragma solidity ^0.4.23;
+import "./BlueToken.sol";
 
 library LibToken {
-
+    using SafeMath for uint;
     struct Token {
         uint id;
         uint coininvestment;
         uint cointotalfees;
-        uint takerfeeratio;
-    	uint makerfeeratio;
 
         BlueToken tokencontract;
     }  
     function createToken(Token storage self, uint id, uint supply, bytes4 name, bytes32 desc, uint transfee) internal returns(bool success){
         self.id = id;
-        self.makerfeeratio = makerfee;
-        self.takerfeeratio = takerfee;
+       // self.makerfeeratio = makerfee;
+       // self.takerfeeratio = takerfee;
         self.tokencontract = new BlueToken(id, supply, name, desc, transfee);
         success = true;
     }
