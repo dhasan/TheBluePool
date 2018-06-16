@@ -97,7 +97,7 @@ contract BluePool is Owned {
         if (ini==true)
             require(msg.sender==owner);
         
-        pairs[pairid].marketBuyFull_token_eth(price, slippage,ini);
+        pairs[pairid].marketBuyFull_token_eth(tokens[pairs[pairid].mainid], tokens[pairs[pairid].baseid], price, slippage, ini);
     }
  /*   
     function marketBuy_token_eth(uint pairid, uint price, uint amount, uint slippage, bool ini) public payable {
