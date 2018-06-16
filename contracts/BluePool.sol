@@ -41,7 +41,7 @@ contract BluePool is Owned {
         require((tokens.length) > m);
         require((tokens.length) > b);
         pairs.push(p);
-        require(tokens[tokens.length - 1].createPair(_name, m, b,makerfee, takerfee));
+        require(pairs[pairs.length - 1].createPair(_name, m, b,makerfee, takerfee));
     }
     function generateTokens(uint tid, uint amount) onlyOwner public { //
         require(tid>0);

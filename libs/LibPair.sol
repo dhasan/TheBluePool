@@ -92,7 +92,7 @@ library LibPair {
         self.ordercnt++;
     }
 
-    function marketBuyFull_token_eth(Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint price, uint slippage, bool ini) internal payable {
+    function marketBuyFull_token_eth(Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint price, uint slippage, bool ini) internal {
         uint total;
         uint value = msg.value;
         require( self.bestask!=0);
