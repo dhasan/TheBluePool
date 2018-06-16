@@ -12,15 +12,11 @@ contract BluePool is Owned {
     using LibCLLu for LibCLLu.CLL;    
     using LibCLLa for LibCLLa.CLL;
     using LibToken for LibToken.Token;
-    
-    
-    
+    using LibPair for LibPair.Pair;
 
     LibPair.Pair[] pairs;
     LibToken.Token[] tokens;  
 
-    
-   
     constructor(/*uint takerratio, uint makerratio*/) Owned() public {
         //ordercnt = 1;
         LibToken.Token memory t;
