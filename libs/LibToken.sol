@@ -1,6 +1,6 @@
 pragma solidity ^0.4.23;
-import "./BlueToken.sol";
-
+import "../contracts/BlueToken.sol";
+import "./SafeMath.sol";
 library LibToken {
     using SafeMath for uint;
     struct Token {

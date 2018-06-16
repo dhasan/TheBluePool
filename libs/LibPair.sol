@@ -1,5 +1,8 @@
 
 pragma solidity ^0.4.23;
+import "./SafeMath.sol";
+import "./LibCLLu.sol";
+import "./LibToken.sol";
 
 library LibPair {
     using SafeMath for uint;
@@ -54,7 +57,7 @@ library LibPair {
             self.askdom[price][self.ordercnt].addr = address(this);
             maintoken.coininvestment = maintoken.coininvestment.add(amount);
         }
-        self.askdom[price][self.ordercnt].id = ordercnt;
+        self.askdom[price][self.ordercnt].id = self.ordercnt;
         self.askdom[price][self.ordercnt].initial = ini;
         self.askdom[price][self.ordercnt].amount = amount;
         //pair.askdom[price][ordercnt] = order;
@@ -98,9 +101,6 @@ library LibPair {
             total := extcodesize(caller)
         }
         require(total==0);
-
-        if (ini==true)
-            require(msg.sender==owner);
         
         if ((price!=self.bestask) && (slippage!=0) && (price!=0)){
             if (price>self.bestask){
@@ -168,7 +168,7 @@ library LibPair {
                             maintoken.coininvestment = maintoken.coininvestment.add(amount.sub(vols));
                             basetoken.coininvestment = basetoken.coininvestment.sub(total);
                         }
-                        emit TradeFill(pairid, self.askdom[p][n].addr, self.askdom[p][n].id, -1*int(self.askdom[p][n].amount));
+                        emit TradeFill(self.id, self.askdom[p][n].addr, self.askdom[p][n].id, -1*int(self.askdom[p][n].amount));
                        // ethacc = ethacc.add(total);
 
                         self.askdom[p][n].amount.sub(amount.sub(vols));
@@ -189,9 +189,9 @@ library LibPair {
 
         if (p!=self.bestask){
             self.bestask=p;
-            emit Quotes(pairid, self.bestask, self.bestbid);
+            emit Quotes(self.id, self.bestask, self.bestbid);
         }
-        emit Trade(pairid, msg.sender, p, int(amount));
+        emit Trade(self.id, msg.sender, p, int(amount));
     }
 
     function getPairTokenIds(Pair storage self) internal view returns(uint[2]){
@@ -241,6 +241,11 @@ library LibPair {
     }
 
     function getFeesRatios(Pair storage self) internal view returns(uint[2]){
-        return [self.]
+        return [self.makerfeeratio, self.takerfeeratio];
     }
+
+    event Quotes(uint pairid, uint ask, uint bid);    
+    event TradeFill(uint indexed pairid, address indexed addr, uint id, int amount);
+    event Trade(uint pairid, address addr, uint price, int amount);
+    event PlaceOrder(uint indexed pairid, address indexed addr, uint indexed price, uint id);
 }
