@@ -22,7 +22,7 @@ contract BluePool is Owned {
     
    
     constructor(/*uint takerratio, uint makerratio*/) Owned() public {
-        ordercnt = 1;
+        //ordercnt = 1;
         LibToken.Token memory t;
         tokens.push(t);
         //makerfeeratio = makerratio;
@@ -36,7 +36,7 @@ contract BluePool is Owned {
         
     }  
     function createPair(bytes8 _name, uint m, uint b, uint makerfee, uint takerfee) onlyOwner public {
-        Pair memory p;
+        LibPair.Pair memory p;
         require(m!=b);
         require((tokens.length) > m);
         require((tokens.length) > b);
@@ -103,7 +103,7 @@ contract BluePool is Owned {
         
         pairs[pairid].marketBuyFull_token_eth(price, slippage,ini);
     }
-    
+ /*   
     function marketBuy_token_eth(uint pairid, uint price, uint amount, uint slippage, bool ini) public payable {
         uint total;
         uint ethacc = 0;
@@ -191,7 +191,7 @@ contract BluePool is Owned {
             
             total = p.mul(amount);
             total = total.shiftRight(80);
-            total = total.mul(takerfeeratio);
+            total = total.mul(self.takerfeeratio);
             total = total.shiftRight(80);
             //total is the fee
             require(msg.value.sub(ethacc) > total);
@@ -207,7 +207,7 @@ contract BluePool is Owned {
         }
         emit Trade(pairid, msg.sender, p, int(amount));
     }
-
+*/
     function depositInvestmentETH() onlyOwner public payable{
         tokens[0].coininvestment = tokens[0].coininvestment.add(msg.value);
     }
