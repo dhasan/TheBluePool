@@ -8,7 +8,7 @@ var BlueToken = artifacts.require("./BlueToken.sol");
 
     module.exports = function (deployer, network, accounts) {
     	deployer.then(async () => {
-        await deployer.deploy(LibCLLa, {from: accounts[0]});
+        
         await deployer.deploy(LibCLLu, {from: accounts[0]});
         await deployer.deploy(SafeMath, {from: accounts[0]});
 
@@ -20,15 +20,16 @@ var BlueToken = artifacts.require("./BlueToken.sol");
         await deployer.deploy(LibPair, {from: accounts[0]});
 
         await deployer.link(SafeMath, BluePool);
+        await deployer.link(LibCLLu, BluePool);
         await deployer.link(LibToken, BluePool);
         await deployer.link(LibPair, BluePool);
 
-        await deployer.link(SafeMath, BlueToken);
-        await deployer.link(LibCLLa, BlueToken);
-
-
+        await deployer.deploy(LibCLLa, {from: accounts[0]});
 
         await deployer.deploy(BluePool, {from: accounts[0]});
+
+        await deployer.link(SafeMath, BlueToken);
+        await deployer.link(LibCLLa, BlueToken);
     })
  
 };

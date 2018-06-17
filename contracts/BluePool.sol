@@ -1,12 +1,14 @@
 pragma solidity ^0.4.23;
 
+import "../libs/LibCLLu.sol";
 import "../libs/LibPair.sol";
 import "../libs/LibToken.sol";
-import "./BlueToken.sol";
+import "../libs/SafeMath.sol";
 import "./Owned.sol";
 
 contract BluePool is Owned {
     using SafeMath for uint;
+    using LibCLLu for LibCLLu.CLL;    
     using LibToken for LibToken.Token;
     using LibPair for LibPair.Pair;
 
@@ -16,6 +18,7 @@ contract BluePool is Owned {
     constructor() Owned() public {
         LibToken.Token memory t;
         tokens.push(t);
+
     }   
     function createToken(bytes4 name, bytes32 desc, uint supply, uint transfee) onlyOwner public returns(uint){
         LibToken.Token memory t;
@@ -31,11 +34,11 @@ contract BluePool is Owned {
         pairs.push(p);
         require(pairs[pairs.length - 1].createPair(_name, m, b,makerfee, takerfee));
     }
-    function generateTokens(uint tid, uint amount) onlyOwner public { //
+    function generateTokens(uint tid, uint amount) onlyOwner public { 
         require(tid>0);
         require(tokens[tid].generateTokens(amount));
     }
-    function destroyTokens(uint tid, uint amount) onlyOwner public { //
+    function destroyTokens(uint tid, uint amount) onlyOwner public { 
         require(tid>0);
         require(tokens[tid].destroyTokens(amount));
     }
@@ -205,16 +208,16 @@ contract BluePool is Owned {
         tokens[0].coininvestment = tokens[0].coininvestment.sub(amount);
     }
 
-    function depositInvestment(uint tid, uint amount) public { //
+    function depositInvestment(uint tid, uint amount) public { 
         require(tid>0);
         require(tokens[tid].depositInvestment(amount));
     }
-    function withdrawInvestment(uint tid, uint amount) onlyOwner public { //
+    function withdrawInvestment(uint tid, uint amount) onlyOwner public { 
         require(tid>0);
         require(tokens[tid].withdrawInvestment(amount));
     }
 
-    function getInvestment(uint tid) public view returns(uint) { //
+    function getInvestment(uint tid) public view returns(uint) { 
         require(tid>0);
         return tokens[tid].getInvestment();
     }
