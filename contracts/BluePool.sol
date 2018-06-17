@@ -1,7 +1,5 @@
 pragma solidity ^0.4.23;
 
-import "../libs/LibCLLu.sol";
-import "../libs/LibCLLa.sol";
 import "../libs/LibPair.sol";
 import "../libs/LibToken.sol";
 import "./BlueToken.sol";
@@ -9,23 +7,17 @@ import "./Owned.sol";
 
 contract BluePool is Owned {
     using SafeMath for uint;
-    using LibCLLu for LibCLLu.CLL;    
-    using LibCLLa for LibCLLa.CLL;
     using LibToken for LibToken.Token;
     using LibPair for LibPair.Pair;
 
     LibPair.Pair[] pairs;
     LibToken.Token[] tokens;  
 
-    constructor(/*uint takerratio, uint makerratio*/) Owned() public {
-        //ordercnt = 1;
+    constructor() Owned() public {
         LibToken.Token memory t;
         tokens.push(t);
-        //makerfeeratio = makerratio;
-        //takerfeeratio = takerratio;
-
     }   
-    function createToken(bytes4 name, bytes32 desc, uint supply, uint transfee/*, uint makerfee, uint takerfee*/) onlyOwner public returns(uint){
+    function createToken(bytes4 name, bytes32 desc, uint supply, uint transfee) onlyOwner public returns(uint){
         LibToken.Token memory t;
         tokens.push(t);
         require(tokens[tokens.length - 1].createToken(tokens.length-1, supply, name, desc, transfee));
@@ -234,7 +226,6 @@ contract BluePool is Owned {
 
     function withdrawFees(uint tid, uint amount) onlyOwner public {
         require(tid>0);
-        tokens[tid].cointotalfees = tokens[tid].cointotalfees.sub(amount);
         require(tokens[tid].withdrawFees(amount));
     }
 
