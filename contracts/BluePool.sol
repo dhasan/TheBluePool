@@ -20,10 +20,10 @@ contract BluePool is Owned {
         tokens.push(t);
 
     }   
-    function createToken(bytes4 name, bytes32 desc, uint supply, uint transfee) onlyOwner public returns(uint){
+    function createToken(bytes4 name, bytes32 desc, uint supply, uint transfee, address taddress) onlyOwner public returns(uint){
         LibToken.Token memory t;
         tokens.push(t);
-        require(tokens[tokens.length - 1].createToken(tokens.length-1, supply, name, desc, transfee));
+        require(tokens[tokens.length - 1].createToken(tokens.length-1, supply, name, desc, transfee, taddress));
         
     }  
     function createPair(bytes8 _name, uint m, uint b, uint makerfee, uint takerfee) onlyOwner public {

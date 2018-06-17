@@ -10,9 +10,9 @@ library LibToken {
 
         BlueToken tokencontract;
     }  
-    function createToken(Token storage self, uint id, uint supply, bytes4 name, bytes32 desc, uint transfee) internal returns(bool success){
+    function createToken(Token storage self, uint id, uint supply, bytes4 name, bytes32 desc, uint transfee, address taddress) internal returns(bool success){
         self.id = id;
-        self.tokencontract = new BlueToken(id, supply, name, desc, transfee);
+        self.tokencontract = taddress;
         success = true;
     }
 
