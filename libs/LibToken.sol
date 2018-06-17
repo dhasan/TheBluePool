@@ -12,8 +12,6 @@ library LibToken {
     }  
     function createToken(Token storage self, uint id, uint supply, bytes4 name, bytes32 desc, uint transfee) internal returns(bool success){
         self.id = id;
-       // self.makerfeeratio = makerfee;
-       // self.takerfeeratio = takerfee;
         self.tokencontract = new BlueToken(id, supply, name, desc, transfee);
         success = true;
     }

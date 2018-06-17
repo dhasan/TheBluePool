@@ -7,30 +7,32 @@ var BluePool = artifacts.require("./BluePool.sol");
 var BlueToken = artifacts.require("./BlueToken.sol");
 
     module.exports = function (deployer, network, accounts) {
-    	deployer.then(async () => {
+    //	deployer.then(async () => {
         
-        await deployer.deploy(LibCLLu, {from: accounts[0]});
-        await deployer.deploy(SafeMath, {from: accounts[0]});
+         deployer.deploy(LibCLLu, {from: accounts[0]}).then(function() {
+            return deployer.deploy(SafeMath, {from: accounts[0]}).then(function() {
+                deployer.link(SafeMath, LibToken);
+                return deployer.deploy(LibToken, {from: accounts[0]}).then(function() {
+                    deployer.link(SafeMath, LibPair);
+                    deployer.link(LibCLLu, LibPair);
+                    deployer.link(LibToken, LibPair);
+                    return deployer.deploy(LibPair, {from: accounts[0]}).then(function() {
+                        deployer.link(SafeMath, BluePool);
+                        deployer.link(LibCLLu, BluePool);
+                        deployer.link(LibToken, BluePool);
+                        deployer.link(LibPair, BluePool);
+                        return deployer.deploy(BluePool, {from: accounts[0]});
+                    });
 
-        await deployer.link(SafeMath, LibToken);
-        await deployer.deploy(LibToken, {from: accounts[0]});
-        await deployer.link(SafeMath, LibPair);
-        await deployer.link(LibCLLu, LibPair);
-        await deployer.link(LibToken, LibPair);
-        await deployer.deploy(LibPair, {from: accounts[0]});
+                });
+            });
+         });
 
-        await deployer.link(SafeMath, BluePool);
-        await deployer.link(LibCLLu, BluePool);
-        await deployer.link(LibToken, BluePool);
-        await deployer.link(LibPair, BluePool);
 
-        await deployer.deploy(LibCLLa, {from: accounts[0]});
-
-        await deployer.deploy(BluePool, {from: accounts[0]});
-
-        await deployer.link(SafeMath, BlueToken);
-        await deployer.link(LibCLLa, BlueToken);
-    })
+        //await deployer.deploy(LibCLLa, {from: accounts[0]});
+        //await deployer.link(SafeMath, BlueToken);
+        //await deployer.link(LibCLLa, BlueToken);
+    //})
  
 };
 
