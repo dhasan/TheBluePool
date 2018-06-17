@@ -18,7 +18,13 @@ var BluePool = artifacts.require("./BluePool.sol");
         await deployer.link(LibToken, LibPair);
         await deployer.deploy(LibPair, {from: accounts[0]});
 
-        await deployer.deploy(BluePool, {from: accounts[0], gas:3000000});
+        await deployer.link(SafeMath, BluePool);
+        await deployer.link(LibCLLu, BluePool);
+        await deployer.link(LibCLLa, BluePool);
+        await deployer.link(LibToken, BluePool);
+        await deployer.link(LibPair, BluePool);
+
+        await deployer.deploy(BluePool, {from: accounts[0]});
     })
  
 };
