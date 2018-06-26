@@ -4,14 +4,22 @@ contract Owned {
     address public owner;
     address public newOwner;
 
+    address public market;
+
     event OwnershipTransferred(address indexed _from, address indexed _to);
 
-    constructor() public {
+    constructor(address _market) public {
+        market = _market
         owner = msg.sender;
     }
 
     modifier onlyOwner {
         require(msg.sender == owner);
+        _;
+    }
+
+    modifier onlyMarket {
+        require(msg.sender == market);
         _;
     }
 

@@ -4,29 +4,30 @@ var LibPair = artifacts.require("./libs/LibPair.sol");
 var LibToken = artifacts.require("./libs/LibToken.sol");
 var SafeMath = artifacts.require("../libs/SafeMath.sol");
 var BluePool = artifacts.require("./BluePool.sol");
-var BlueToken = artifacts.require("./BlueToken.sol");
 
     module.exports = function (deployer, network, accounts) {
-    //	deployer.then(async () => {
-        
-         deployer.deploy(LibCLLu, {from: accounts[0]}).then(function() {
-            return deployer.deploy(SafeMath, {from: accounts[0]}).then(function() {
-                deployer.link(SafeMath, LibToken);
-                return deployer.deploy(LibToken, {from: accounts[0]}).then(function() {
-                    deployer.link(SafeMath, LibPair);
-                    deployer.link(LibCLLu, LibPair);
-                    deployer.link(LibToken, LibPair);
-                    return deployer.deploy(LibPair, {from: accounts[0]}).then(function() {
-                        deployer.link(SafeMath, BluePool);
-                        deployer.link(LibCLLu, BluePool);
-                        deployer.link(LibToken, BluePool);
-                        deployer.link(LibPair, BluePool);
-                        return deployer.deploy(BluePool, {from: accounts[0]});
-                    });
 
+        
+    deployer.deploy(LibCLLu, {from: accounts[0]}).then(function() {
+        return deployer.deploy(SafeMath, {from: accounts[0]}).then(function() {
+            deployer.link(SafeMath, LibToken);
+            return deployer.deploy(LibToken, {from: accounts[0]}).then(function() {
+                deployer.link(SafeMath, LibPair);
+                deployer.link(LibCLLu, LibPair);
+                deployer.link(LibToken, LibPair);
+                return deployer.deploy(LibPair, {from: accounts[0]}).then(function() {
+                    deployer.link(SafeMath, BluePool);
+                    deployer.link(LibCLLu, BluePool);
+                    deployer.link(LibToken, BluePool);
+                    deployer.link(LibPair, BluePool);
+                    return deployer.deploy(BluePool, {from: accounts[0]}).then(function() {
+                        deployer.deploy(LibCLLa, {from: accounts[0]});
+                    });
                 });
+
             });
-         });
+        });
+    });
 
 
         //await deployer.deploy(LibCLLa, {from: accounts[0]});
