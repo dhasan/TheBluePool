@@ -21,7 +21,9 @@ var BluePool = artifacts.require("./BluePool.sol");
                     deployer.link(LibToken, BluePool);
                     deployer.link(LibPair, BluePool);
                     return deployer.deploy(BluePool, {from: accounts[0]}).then(function() {
-                        deployer.deploy(LibCLLa, {from: accounts[0]});
+                        return deployer.deploy(LibCLLa, {from: accounts[0]}).then(function() {
+                            console.log("2 done");
+                        });
                     });
                 });
 

@@ -14,7 +14,9 @@ var BlueToken = artifacts.require("./BlueToken.sol");
                 LibCLLa.deployed().then(function(clainst) {
                     deployer.link(LibCLLa, BlueToken);
                     return deployer.deploy(BlueToken, tokenscnt, 38000, "BPS", "BluePoolShares", 5, bluep.address, {from: accounts[0]}).then(function(instance) {
-                        return bluep.createToken(instance.address);
+                        return bluep.createToken(instance.address).then(function(result) {
+                            console.log("3 done");
+                        });
                     });  
                 });
             });

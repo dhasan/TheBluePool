@@ -5,7 +5,7 @@ library LibToken {
     using SafeMath for uint;
     struct Token {
         uint id;
-        uint coininvestment;
+        //uint coininvestment;
         uint cointotalfees;
 
         BlueToken tokencontract;
@@ -15,7 +15,7 @@ library LibToken {
         self.tokencontract = BlueToken(taddress);//new BlueToken(id, supply, name, desc, transfee);
         success = true;
     }
-
+/*
 	function generateTokens(Token storage self, uint amount) internal returns(bool success) {
         require(self.tokencontract.createTokens(amount));
         success = true;
@@ -25,6 +25,7 @@ library LibToken {
         require(self.tokencontract.destroyTokens(amount));
         success = true;
     }
+    */
 /*
     function depositInvestment(Token storage self, uint amount) internal returns(bool success){
         self.coininvestment = self.coininvestment.add(amount);
@@ -42,23 +43,25 @@ library LibToken {
         return self.coininvestment;
     }
 */
-/*
-    function withdrawFees(Token storage self, uint amount) internal returns(bool success) {
+
+    function withdrawFees(Token storage self, uint amount, address rcv) internal returns(bool success) {
         self.cointotalfees = self.cointotalfees.sub(amount);
-        require(self.tokencontract.transfer(msg.sender, amount));
+        require(self.tokencontract.transfer_from(address(this), rcv, amount));
         success = true;
     }
-*/
+
 /*
     function withdrawTransFees(Token storage self, uint amount) internal returns(bool success) {
         require(self.tokencontract.widthrawFees(amount, msg.sender));
         success = true;
     }
 */
+/*
     function setTransFeeRatio(Token storage self, uint val) internal returns(bool success) {
         require(self.tokencontract.setFeeRatio(val));
         success = true;
     }
+    */
 
 
 }

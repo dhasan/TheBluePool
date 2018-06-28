@@ -37,6 +37,7 @@ contract BluePool is Owned {
         pairs.push(p);
         require(pairs[pairs.length - 1].createPair(_name, m, b,makerfee, takerfee));
     }
+    /*
     function generateTokens(uint tid, uint amount) onlyOwner public { 
         require(tid>0);
         require(tokens[tid].generateTokens(amount));
@@ -45,6 +46,7 @@ contract BluePool is Owned {
         require(tid>0);
         require(tokens[tid].destroyTokens(amount));
     }
+    */
     function getPairTokenIds(uint pairid) public view returns(uint[2]){
         return pairs[pairid].getPairTokenIds();
     }
@@ -215,30 +217,30 @@ contract BluePool is Owned {
  //       require(tid>0);
  //       return tokens[tid].getInvestment();
  //   }
-/*
-    function withdrawFeesETH(uint amount) onlyOwner public {
+
+    function withdrawFeesETH(uint amount, address rcv) onlyOwner public {
         require(owner.send(amount));
         tokens[0].cointotalfees = tokens[0].cointotalfees.sub(amount);
-    }*/
-/*
-    function withdrawFees(uint tid, uint amount) onlyOwner public {
-        require(tid>0);
-        require(tokens[tid].withdrawFees(amount));
     }
-*/
+
+    function withdrawFees(uint tid, uint amount, address rcv) onlyOwner public {
+        require(tid>0);
+        require(tokens[tid].withdrawFees(amount, rcv));
+    }
+
    // function withdrawTransFees(uint tid, uint amount) onlyOwner public {
    //     require(tid>0);
    //     require(tokens[tid].withdrawTransFees(amount));
    // }
-
+/*
     function setTransFeeRatio(uint tid, uint val) onlyOwner public {
         require(tid>0);
         require(tokens[tid].setTransFeeRatio(val));
     }
-
-    function tokenFallback(uint tid, address from, uint amount) public {
+*/
+  /*  function tokenFallback(uint tid, address from, uint amount) public {
         
-    }
+    }*/
 
     function getMarketDeposit(uint tid, address addr) public view returns(uint){ // this is for pairs library
         uint i;
