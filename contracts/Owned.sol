@@ -9,7 +9,7 @@ contract Owned {
     event OwnershipTransferred(address indexed _from, address indexed _to);
 
     constructor(address _market) public {
-        market = _market
+        market = _market;
         owner = msg.sender;
     }
 

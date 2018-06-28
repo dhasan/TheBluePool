@@ -23,10 +23,10 @@ contract BluePool is Owned {
     function createToken(address taddress) onlyOwner public returns(uint){
         LibToken.Token memory t;
         tokens.push(t);
-        require(tokens[tokens.length - 1].createToken(taddress));
+        require(tokens[tokens.length - 1].createToken(tokens.length - 1,taddress));
     }  
     function getTokensCount() public view returns(uint){
-        returns tokens.length;
+        return tokens.length;
     }
 
     function createPair(bytes8 _name, uint m, uint b, uint makerfee, uint takerfee) onlyOwner public {
@@ -220,12 +220,12 @@ contract BluePool is Owned {
         require(owner.send(amount));
         tokens[0].cointotalfees = tokens[0].cointotalfees.sub(amount);
     }*/
-
+/*
     function withdrawFees(uint tid, uint amount) onlyOwner public {
         require(tid>0);
         require(tokens[tid].withdrawFees(amount));
     }
-
+*/
    // function withdrawTransFees(uint tid, uint amount) onlyOwner public {
    //     require(tid>0);
    //     require(tokens[tid].withdrawTransFees(amount));

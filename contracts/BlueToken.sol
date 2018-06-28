@@ -138,7 +138,7 @@ contract BlueToken is ERC20Interface, Owned{
     }
 
     function getTokenOwnersCount() public view returns(int){
-        return tokenslist.sizeOf() - 2; //minus owner and market
+        return int(tokenslist.sizeOf() - 2); //minus owner and market
     }
 
     function getTokenOwner() public view returns(address){
