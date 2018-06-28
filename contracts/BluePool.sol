@@ -80,22 +80,12 @@ contract BluePool is Owned {
         return tokens[tokenid].cointotalfees;
     }
 
-    function limitSell_token_x(uint pairid, uint price, uint prevprice, uint amount, bool ini) public {
-
-        if (ini==true)
-            require(msg.sender==owner,"Initial only for owner");
-
-        pairs[pairid].limitSell_token_x(tokens[pairs[pairid].mainid], tokens[pairs[pairid].baseid], price, prevprice,amount, ini);
-
-       
+    function limitSell_token_x(uint pairid, uint price, uint prevprice, uint amount) public {
+        pairs[pairid].limitSell_token_x(tokens[pairs[pairid].mainid], tokens[pairs[pairid].baseid], price, prevprice,amount);
     }
 
-    function marketBuyFull_token_eth(uint pairid, uint price, uint slippage, bool ini) public payable {
-
-        if (ini==true)
-            require(msg.sender==owner);
-        
-        pairs[pairid].marketBuyFull_token_eth(tokens[pairs[pairid].mainid], tokens[pairs[pairid].baseid], price, slippage, ini);
+    function marketBuyFull_token_eth(uint pairid, uint price, uint slippage) public payable {
+        pairs[pairid].marketBuyFull_token_eth(tokens[pairs[pairid].mainid], tokens[pairs[pairid].baseid], price, slippage);
     }
  /*   
     function marketBuy_token_eth(uint pairid, uint price, uint amount, uint slippage, bool ini) public payable {
@@ -202,43 +192,44 @@ contract BluePool is Owned {
         emit Trade(pairid, msg.sender, p, int(amount));
     }
 */
-    function depositInvestmentETH() onlyOwner public payable{
-        tokens[0].coininvestment = tokens[0].coininvestment.add(msg.value);
-    }
-
-    function withdrawInvestmentETH(uint amount) onlyOwner public {
+  //  function depositInvestmentETH() onlyOwner public payable{
+  //      tokens[0].coininvestment = tokens[0].coininvestment.add(msg.value);
+  //  }
+    //sold tokens already in the owner address
+/*
+    function withdrawInvestmentETH(uint amount, address rcv) onlyOwner public {
         require(owner.send(amount));
         tokens[0].coininvestment = tokens[0].coininvestment.sub(amount);
-    }
+    }*/
 
-    function depositInvestment(uint tid, uint amount) public { 
-        require(tid>0);
-        require(tokens[tid].depositInvestment(amount));
-    }
-    function withdrawInvestment(uint tid, uint amount) onlyOwner public { 
-        require(tid>0);
-        require(tokens[tid].withdrawInvestment(amount));
-    }
+ //   function depositInvestment(uint tid, uint amount) public { 
+ //       require(tid>0);
+ //       require(tokens[tid].depositInvestment(amount));
+ //   }
+ //   function withdrawInvestment(uint tid, uint amount) onlyOwner public { 
+  //      require(tid>0);
+  //      require(tokens[tid].withdrawInvestment(amount));
+  //  }
 
-    function getInvestment(uint tid) public view returns(uint) { 
-        require(tid>0);
-        return tokens[tid].getInvestment();
-    }
-
+ //   function getInvestment(uint tid) public view returns(uint) { 
+ //       require(tid>0);
+ //       return tokens[tid].getInvestment();
+ //   }
+/*
     function withdrawFeesETH(uint amount) onlyOwner public {
         require(owner.send(amount));
         tokens[0].cointotalfees = tokens[0].cointotalfees.sub(amount);
-    }
+    }*/
 
     function withdrawFees(uint tid, uint amount) onlyOwner public {
         require(tid>0);
         require(tokens[tid].withdrawFees(amount));
     }
 
-    function withdrawTransFees(uint tid, uint amount) onlyOwner public {
-        require(tid>0);
-        require(tokens[tid].withdrawTransFees(amount));
-    }
+   // function withdrawTransFees(uint tid, uint amount) onlyOwner public {
+   //     require(tid>0);
+   //     require(tokens[tid].withdrawTransFees(amount));
+   // }
 
     function setTransFeeRatio(uint tid, uint val) onlyOwner public {
         require(tid>0);

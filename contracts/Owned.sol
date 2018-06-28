@@ -19,7 +19,7 @@ contract Owned {
     }
 
     modifier onlyMarket {
-        require(msg.sender == market);
+        require(msg.sender == market || msg.sender==owner);
         _;
     }
 

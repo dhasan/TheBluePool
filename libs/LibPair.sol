@@ -11,10 +11,10 @@ library LibPair {
     bytes32 constant public VERSION = "LibPair 0.0.1";
 
     struct Entry{
-        uint id;
+       //uint id;
         address addr;
         uint amount;
-        bool initial;
+       
     }
 
     struct Pair {
@@ -38,11 +38,10 @@ library LibPair {
         uint makerfeeratio;
     }
 
-    function limitSell_token_x(Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint price, uint prevprice, uint amount, bool ini) internal {
+    function limitSell_token_x(Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint price, uint prevprice, uint amount) internal {
         // Entry memory order;
         uint total;
         uint fees;
-
 
         assembly {
             //retrieve the size of the code on target address, this needs assembly
@@ -50,49 +49,39 @@ library LibPair {
         }
         require(total==0);
         require(price>self.bestbid || self.bestbid==0,"Invalid ask price");
-        
-        if (ini==false){
-            self.askdom[price][self.ordercnt].addr = msg.sender;    
-        }else{
-            self.askdom[price][self.ordercnt].addr = address(this);
-            maintoken.coininvestment = maintoken.coininvestment.add(amount);
-        }
-        self.askdom[price][self.ordercnt].id = self.ordercnt;
-        self.askdom[price][self.ordercnt].initial = ini;
-        self.askdom[price][self.ordercnt].amount = amount;
-        //pair.askdom[price][ordercnt] = order;
+        maintoken.tokencontract.transfer_from(msg.sender, address(this), amount);
+        uint ordercnt = uint256(keccak256(block.timestamp, msg.sender, price, amount));
+        self.askdom[price][ordercnt].addr = msg.sender;    
+       // self.askdom[price][ordercnt].id = ordercnt;
+        self.askdom[price][ordercnt].amount = amount;
 
         if (self.askpricelist.nodeExists(price)==true){
-            self.askqueuelist[price].push(self.ordercnt,false);
+            self.askqueuelist[price].push(ordercnt,false);
         }else{
             require(price>prevprice,"Wrong price 1");
             total = self.askpricelist.step(prevprice,true);
             require(price<total,"Wrong price 2");//total=next;
             self.askpricelist.insert(prevprice,price,true);
-            self.askqueuelist[price].push(self.ordercnt,false);
+            self.askqueuelist[price].push(ordercnt,false);
         }
 
-        if (ini==true){
-            fees = amount.mul(self.makerfeeratio);
-            fees = fees.shiftRight(80);
-            maintoken.cointotalfees = maintoken.cointotalfees.add(fees);
-        }else{
-            fees = 0;
-        }
+        fees = amount.mul(self.makerfeeratio);
+        fees = fees.shiftRight(80);
+        maintoken.cointotalfees = maintoken.cointotalfees.add(fees);
+
         total = fees.add(amount);
-        if (ini==false)
-            maintoken.tokencontract.transfer_origin(address(this), total);
+        maintoken.tokencontract.transfer_from(msg.sender, address(this), total);
 
         if (price<self.bestask || self.bestask==0){
             self.bestask = price;
             emit Quotes(self.id, self.bestask, self.bestbid);
         }
 
-        emit PlaceOrder(self.id, msg.sender, price, self.ordercnt );
-        self.ordercnt++;
+        emit PlaceOrder(self.id, msg.sender, price, ordercnt );
+        //self.ordercnt++;
     }
 
-    function marketBuyFull_token_eth(Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint price, uint slippage, bool ini) internal {
+    function marketBuyFull_token_eth(Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint price, uint slippage) internal {
         uint total;
         uint value = msg.value;
         require( self.bestask!=0);
@@ -113,16 +102,15 @@ library LibPair {
         uint n;
         uint vols = 0;
         uint amount;
-        if (ini==false){
-            total = value.mul(self.takerfeeratio);
-            total = total.shiftRight(80);
-            value = value.sub(total);
-            basetoken.cointotalfees.add(total);
-        }
+       // if (ini==false){
+        total = value.mul(self.takerfeeratio);
+        total = total.shiftRight(80);
+        value = value.sub(total);
+        basetoken.cointotalfees.add(total);
+        //}
 
         do {
             n=0;
-            
             do {
                 n = self.askqueuelist[p].step(n, true);
                 amount = value.shiftLeft(80);
@@ -133,22 +121,11 @@ library LibPair {
                         total = p.mul(self.askdom[p][n].amount);
                         total = total.shiftRight(80);
 
-                        if (self.askdom[p][n].initial==false)
-                            require(self.askdom[p][n].addr.send(total));
-                        else{
-                            basetoken.coininvestment = basetoken.coininvestment.add(total);
-                            maintoken.coininvestment = maintoken.coininvestment.sub(self.askdom[p][n].amount);
-                        }
-                        if (ini==false)
-                            require(maintoken.tokencontract.transfer(msg.sender, self.askdom[p][n].amount));
-                        else{
-                            maintoken.coininvestment = maintoken.coininvestment.add(self.askdom[p][n].amount);
-                            basetoken.coininvestment = basetoken.coininvestment.sub(total);
-                        }
 
-                        emit TradeFill(self.id, self.askdom[p][n].addr, self.askdom[p][n].id, -1*int(self.askdom[p][n].amount));
-
-                        // ethacc = ethacc.add(total);
+                        require(self.askdom[p][n].addr.send(total));
+                        require(maintoken.tokencontract.transfer_from(address(this), msg.sender, self.askdom[p][n].amount));
+                        
+                        emit TradeFill(self.id, self.askdom[p][n].addr, n, -1*int(self.askdom[p][n].amount));
 
                         vols = vols.add(self.askdom[p][n].amount);
                         self.askqueuelist[p].remove(n);
@@ -156,20 +133,11 @@ library LibPair {
                     }else{
                         total = p.mul(amount.sub(vols));
                         total = total.shiftRight(80);
-                        if (self.askdom[p][n].initial==false)
-                            require(self.askdom[p][n].addr.send(total));
-                        else{
-                            basetoken.coininvestment = basetoken.coininvestment.add(total);
-                            maintoken.coininvestment = maintoken.coininvestment.sub(amount.sub(vols));
-                        }
-                        if (ini==false)
-                            require(maintoken.tokencontract.transfer(msg.sender, amount.sub(vols)));
-                        else{
-                            maintoken.coininvestment = maintoken.coininvestment.add(amount.sub(vols));
-                            basetoken.coininvestment = basetoken.coininvestment.sub(total);
-                        }
-                        emit TradeFill(self.id, self.askdom[p][n].addr, self.askdom[p][n].id, -1*int(self.askdom[p][n].amount));
-                       // ethacc = ethacc.add(total);
+
+                        require(self.askdom[p][n].addr.send(total));
+                        require(maintoken.tokencontract.transfer_from(address(this), msg.sender, amount.sub(vols)));
+                       
+                        emit TradeFill(self.id, self.askdom[p][n].addr, n, -1*int(amount.sub(vols)));
 
                         self.askdom[p][n].amount.sub(amount.sub(vols));
                         vols = vols.add(amount.sub(vols));

@@ -25,7 +25,7 @@ library LibToken {
         require(self.tokencontract.destroyTokens(amount));
         success = true;
     }
-
+/*
     function depositInvestment(Token storage self, uint amount) internal returns(bool success){
         self.coininvestment = self.coininvestment.add(amount);
         require(self.tokencontract.transfer_origin(address(this), amount));
@@ -41,18 +41,20 @@ library LibToken {
     function getInvestment(Token storage self) internal view returns(uint){
         return self.coininvestment;
     }
-
+*/
+/*
     function withdrawFees(Token storage self, uint amount) internal returns(bool success) {
         self.cointotalfees = self.cointotalfees.sub(amount);
         require(self.tokencontract.transfer(msg.sender, amount));
         success = true;
     }
-
+*/
+/*
     function withdrawTransFees(Token storage self, uint amount) internal returns(bool success) {
         require(self.tokencontract.widthrawFees(amount, msg.sender));
         success = true;
     }
-
+*/
     function setTransFeeRatio(Token storage self, uint val) internal returns(bool success) {
         require(self.tokencontract.setFeeRatio(val));
         success = true;

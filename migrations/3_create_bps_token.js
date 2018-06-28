@@ -13,7 +13,7 @@ var BlueToken = artifacts.require("./BlueToken.sol");
                 deployer.link(SafeMath, BlueToken);
                 LibCLLa.deployed().then(function(clainst) {
                     deployer.link(LibCLLa, BlueToken);
-                    return deployer.deploy(BlueToken, tokenscnt, 38000, "BPS", "BluePoolShares", 5, {from: accounts[0]}).then(function(instance) {
+                    return deployer.deploy(BlueToken, tokenscnt, 38000, "BPS", "BluePoolShares", 5, bluep.address, {from: accounts[0]}).then(function(instance) {
                         return bluep.createToken(instance.address);
                     });  
                 });
