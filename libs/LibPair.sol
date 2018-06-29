@@ -24,6 +24,7 @@ library LibPair {
         uint baseid;
         uint bestask;
         uint bestbid;
+        uint vol;
 
         LibCLLu.CLL askpricelist;
         mapping (uint => LibCLLu.CLL) askqueuelist;
@@ -38,10 +39,102 @@ library LibPair {
         uint makerfeeratio;
     }
 
-    function limitSell_token_x(Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint price, uint prevprice, uint amount) internal {
+    function limitBuy_token_eth(Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint price, uint prevprice) internal {
+         // Entry memory order;
+        uint total;
+        uint fees;
+        uint value = msg.value;
+
+        assembly {
+            //retrieve the size of the code on target address, this needs assembly
+            total := extcodesize(caller)
+        }
+
+        require(total==0);
+        require(price<self.bestask || self.bestask==0,"Invalid bid price");
+
+        uint ordercnt = uint256(keccak256(block.timestamp, msg.sender, price, msg.value));
+        require(self.bidqueuelist[price].nodeExists(ordercnt)==false);
+
+        fees = value.mul(self.makerfeeratio);
+        fees = fees.shiftRight(80);
+        basetoken.cointotalfees = basetoken.cointotalfees.add(fees);
+        value = value.sub(fees);
+
+        self.biddom[price][ordercnt].addr = msg.sender;   
+        total = value.shiftLeft(80);
+        total = value.div(price);
+        self.biddom[price][ordercnt].amount = total;
+
+        if (self.bidpricelist.nodeExists(price)==true){
+            self.bidqueuelist[price].push(ordercnt,false);
+        }else{
+            require(price<prevprice,"Wrong price 1");
+            total = self.bidpricelist.step(prevprice,false);
+            require(price>total,"Wrong price 2");//total=next;
+            self.bidpricelist.insert(prevprice,price,false);
+            self.bidqueuelist[price].push(ordercnt,false);
+        }
+
+        if (price>self.bestbid|| self.bestbid==0){
+            self.bestbid = price;
+            emit Quotes(self.id, self.bestask, self.bestbid);
+        }
+
+        emit PlaceOrder(self.id, msg.sender, price, ordercnt );
+
+    }
+
+    function delete_ask_order(Pair storage self, LibToken.Token storage maintoken, uint orderid, uint price) internal {
+        uint total;
+        require(self.askpricelist.nodeExists(price));
+        require(self.askqueuelist[price].nodeExists(orderid));
+        require(msg.sender == self.askdom[price][ordercnt].addr);
+        total = self.askdom[price][ordercnt].amount.mul(self.takerfeeratio);
+        total = total.shiftRight(80);
+        maintoken.cointotalfees = maintoken.cointotalfees.add(total);
+        total = self.askdom[price][ordercnt].amount.sub(total);
+        if (maintoken.id==0)
+            require(msg.sender.send(total));
+        else
+            maintoken.tokencontract.transfer_from(address(this), msg.sender, total);
+        self.askqueuelist[price].remove(orderid);
+        if (self.askqueuelist[price].sizeOf()==0){
+            self.askpricelist.remove(price);
+        }
+
+    }
+
+    function delete_bid_order(Pair storage self, LibToken.Token storage basetoken, uint orderid, uint price) internal {
+        uint value;
+        uint fees;
+        require(self.bidpricelist.nodeExists(price));
+        require(self.bidqueuelist[price].nodeExists(orderid));
+        require(msg.sender == self.biddom[price][ordercnt].addr);
+        value = self.biddom[price][ordercnt].amount.mul(price);
+        value = value.shiftRight(80);
+        fees = value.mul(self.takerfeeratio);
+        fees = fees.shiftRight(80);
+        value = value.sub(fees);
+
+        basetoken.cointotalfees = basetoken.cointotalfees.add(fees);
+        if (basetoken.id==0)
+            require(msg.sender.send(value));
+        else
+            maintoken.tokencontract.transfer_from(address(this), msg.sender, value);
+
+        self.bidqueuelist[price].remove(orderid);
+        if (self.bidqueuelist[price].sizeOf()==0){
+            self.bidpricelist.remove(price);
+        }
+
+    }
+
+    function limitSell_token_x(Pair storage self, LibToken.Token storage maintoken, uint price, uint prevprice, uint amount) internal {
         // Entry memory order;
         uint total;
         uint fees;
+
 
         assembly {
             //retrieve the size of the code on target address, this needs assembly
@@ -49,10 +142,10 @@ library LibPair {
         }
         require(total==0);
         require(price>self.bestbid || self.bestbid==0,"Invalid ask price");
-        maintoken.tokencontract.transfer_from(msg.sender, address(this), amount);
+        
         uint ordercnt = uint256(keccak256(block.timestamp, msg.sender, price, amount));
+
         self.askdom[price][ordercnt].addr = msg.sender;    
-       // self.askdom[price][ordercnt].id = ordercnt;
         self.askdom[price][ordercnt].amount = amount;
 
         if (self.askpricelist.nodeExists(price)==true){
@@ -121,7 +214,6 @@ library LibPair {
                         total = p.mul(self.askdom[p][n].amount);
                         total = total.shiftRight(80);
 
-
                         require(self.askdom[p][n].addr.send(total));
                         require(maintoken.tokencontract.transfer_from(address(this), msg.sender, self.askdom[p][n].amount));
                         
@@ -129,6 +221,9 @@ library LibPair {
 
                         vols = vols.add(self.askdom[p][n].amount);
                         self.askqueuelist[p].remove(n);
+                        if (self.askqueuelist[p].sizeOf()==0){
+                            self.askpricelist.remove(p);
+                        }
                         value = value.sub(total);
                     }else{
                         total = p.mul(amount.sub(vols));

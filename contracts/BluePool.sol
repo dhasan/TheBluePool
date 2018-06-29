@@ -83,7 +83,7 @@ contract BluePool is Owned {
     }
 
     function limitSell_token_x(uint pairid, uint price, uint prevprice, uint amount) public {
-        pairs[pairid].limitSell_token_x(tokens[pairs[pairid].mainid], tokens[pairs[pairid].baseid], price, prevprice,amount);
+        pairs[pairid].limitSell_token_x(tokens[pairs[pairid].mainid], price, prevprice,amount);
     }
 
     function marketBuyFull_token_eth(uint pairid, uint price, uint slippage) public payable {
