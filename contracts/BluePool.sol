@@ -32,7 +32,7 @@ contract BluePool is Owned {
     function createPair(bytes8 _name, uint m, uint b, uint makerfee, uint takerfee) onlyOwner public {
         LibPair.Pair memory p;
         require(m!=b);
-        require((tokens.length) > m);
+        require((tokens.length) > m,"Invalid main token id");
         require((tokens.length) > b);
         pairs.push(p);
         require(pairs[pairs.length - 1].createPair(_name, m, b,makerfee, takerfee));
