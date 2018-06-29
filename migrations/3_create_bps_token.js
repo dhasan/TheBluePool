@@ -9,13 +9,20 @@ var BlueToken = artifacts.require("./BlueToken.sol");
             bluep = instance;
             return bluep.getTokensCount.call({from: accounts[0]});
         }).then(function(tokenscnt) {
+
             SafeMath.deployed().then(function(sminst) {
                 deployer.link(SafeMath, BlueToken);
                 LibCLLa.deployed().then(function(clainst) {
                     deployer.link(LibCLLa, BlueToken);
                     return deployer.deploy(BlueToken, tokenscnt, 38000, "BPS", "BluePoolShares", 5, bluep.address, {from: accounts[0]}).then(function(instance) {
-                        return bluep.createToken(instance.address).then(function(result) {
-                            console.log("3 done");
+                        return bluep.createToken(instance.address, {from: accounts[0]}).then(function(result) {
+                            console.log("3 done:");
+                            BluePool.deployed().then(function(instance) {
+                                //bluep = instance;
+                                return bluep.getTokensCount.call({from: accounts[0]});
+                            }).then(function(tokenscnt) {
+                                console.log("cnt:"+tokenscnt);
+                            });
                         });
                     });  
                 });
