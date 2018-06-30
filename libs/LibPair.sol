@@ -13,7 +13,8 @@ library LibPair {
     struct Entry{
        //uint id;
         address addr;
-        uint amount;
+        uint amount; //tokens count
+        uint value; //total eth
        
     }
 
@@ -25,6 +26,9 @@ library LibPair {
         uint bestask;
         uint bestbid;
         uint vol;
+
+        address owner;
+        address market;
 
         LibCLLu.CLL askpricelist;
         mapping (uint => LibCLLu.CLL) askqueuelist;
@@ -55,10 +59,12 @@ library LibPair {
 
         uint ordercnt = uint256(keccak256(block.timestamp, msg.sender, price, msg.value));
         require(self.bidqueuelist[price].nodeExists(ordercnt)==false);
-
-        fees = value.mul(self.makerfeeratio);
-        fees = fees.shiftRight(80);
-        basetoken.cointotalfees = basetoken.cointotalfees.add(fees);
+        if (msg.sender!=self.owner){
+            fees = value.mul(self.makerfeeratio);
+            fees = fees.shiftRight(80);
+            basetoken.cointotalfees = basetoken.cointotalfees.add(fees);
+        }else
+            fees = 0;
         value = value.sub(fees);
 
         self.biddom[price][ordercnt].addr = msg.sender;   
@@ -66,16 +72,14 @@ library LibPair {
         total = value.div(price);
         self.biddom[price][ordercnt].amount = total;
 
-        if (self.bidpricelist.nodeExists(price)==true){
-            self.bidqueuelist[price].push(ordercnt,false);
-        }else{
-            require(price<prevprice,"Wrong price 1");
+        if (self.bidpricelist.nodeExists(price)==false){
+            require(price<prevprice || prevprice==0,"Wrong price 1");
             total = self.bidpricelist.step(prevprice,false);
-            require(price>total,"Wrong price 2");//total=next;
+            require(price>total || total==0,"Wrong price 2");//total=next;
             self.bidpricelist.insert(prevprice,price,false);
-            self.bidqueuelist[price].push(ordercnt,false);
         }
-
+        
+        self.bidqueuelist[price].push(ordercnt,false);
         if (price>self.bestbid|| self.bestbid==0){
             self.bestbid = price;
             emit Quotes(self.id, self.bestask, self.bestbid);
@@ -85,24 +89,104 @@ library LibPair {
 
     }
 
+    function get_ask_order_price(Pair storage self, uint orderid) internal view returns(uint) {
+        uint p=0;
+        uint n=0;
+
+        do {
+            p= self.askpricelist.step(p,true);
+            n = 0;
+            do {
+                n = self.askqueuelist[p].step(n,true);
+                if (n==orderid)
+                    returns p;
+            }while(n!=orderid) && (n!=0)
+        }while((p!=0) &&(n!=orderid));
+
+        return 0;
+    }
+
+     function get_bid_order_price(Pair storage self, uint orderid) internal view returns(uint) {
+        uint p=0;
+        uint n=0;
+
+        do {
+            p= self.bidpricelist.step(p,false);
+            n=0;
+            do {
+                n = self.bidqueuelist[p].step(n,true);
+                if (n==orderid)
+                    returns p;
+            }while(n!=orderid) && (n!=0)
+        }while((p!=0) &&(n!=orderid));
+
+        return 0;
+    }
+
+    function modify_ask_order_price(Pair storage self, LibToken.Token storage maintoken, uint orderid, uint price, uint newprice, uint newprevprice){
+        Entry memory tempentry;
+
+        require(newprice>self.bestbid || self.bestbid==0);
+        require(self.askpricelist.nodeExists(price));
+        require(self.askqueuelist[price].nodeExists(orderid));
+        require(msg.sender == self.askdom[price][orderid].addr);
+        tempentry.addr = self.askdom[price][orderid].addr;
+        tempentry.amount = self.askdom[price][orderid].amount;
+
+        self.askqueuelist[price].remove(orderid);
+        if (self.askqueuelist[price].sizeOf()==0){
+            self.askpricelist.remove(price);
+        }
+
+        if (self.askpricelist.nodeExists(newprice)==false){
+            require(newprice>newprevprice,"Wrong newprice 1");
+            total = self.askpricelist.step(newprevprice,true);
+            require(newprice<total || total==0,"Wrong newprice 2");//total=next;
+            self.askpricelist.insert(newprevprice,newprice,true);
+        }
+
+        self.askqueuelist[newprice].push(orderid,false);
+
+        self.askdom[newprice][orderid].addr = tempentry.addr;
+        self.askdom[newprice][orderid].amount = tempentry.amount;
+
+        if (newprice<self.bestask){
+            emit Quotes(self.id, self.bestask, self.bestbid);   
+        }
+    }
+
+    function get_ask_order_details(Pair storage self, uint orderid, uint price) internal view returns(address, uint) { //address and amount
+        return (self.askdom[price][orderid].addr, self.askdom[price][orderid].amount);
+    }
+
+    function get_bid_order_details(Pair storage self, uint orderid, uint price) internal view returns(address, uint) { //address and amount
+        return (self.biddom[price][orderid].addr, self.biddom[price][orderid].amount);
+    }
+
     function delete_ask_order(Pair storage self, LibToken.Token storage maintoken, uint orderid, uint price) internal {
         uint total;
         require(self.askpricelist.nodeExists(price));
         require(self.askqueuelist[price].nodeExists(orderid));
-        require(msg.sender == self.askdom[price][ordercnt].addr);
-        total = self.askdom[price][ordercnt].amount.mul(self.takerfeeratio);
-        total = total.shiftRight(80);
-        maintoken.cointotalfees = maintoken.cointotalfees.add(total);
-        total = self.askdom[price][ordercnt].amount.sub(total);
+        require(msg.sender == self.askdom[price][orderid].addr);
+        if (self.owner!=msg.sender){
+            total = self.askdom[price][orderid].amount.mul(self.takerfeeratio);
+            total = total.shiftRight(80);
+            maintoken.cointotalfees = maintoken.cointotalfees.add(total);
+        }else
+            total=0;
+        total = self.askdom[price][orderid].amount.sub(total);
         if (maintoken.id==0)
             require(msg.sender.send(total));
         else
             maintoken.tokencontract.transfer_from(address(this), msg.sender, total);
         self.askqueuelist[price].remove(orderid);
         if (self.askqueuelist[price].sizeOf()==0){
-            self.askpricelist.remove(price);
+            if (self.bestask==price){
+                self.bestask = self.askpricelist.step(price,true);
+                emit Quotes(self.id, self.bestask, self.bestbid);
+            }
+            self.askpricelist.remove(price);            
         }
-
     }
 
     function delete_bid_order(Pair storage self, LibToken.Token storage basetoken, uint orderid, uint price) internal {
@@ -110,31 +194,38 @@ library LibPair {
         uint fees;
         require(self.bidpricelist.nodeExists(price));
         require(self.bidqueuelist[price].nodeExists(orderid));
-        require(msg.sender == self.biddom[price][ordercnt].addr);
-        value = self.biddom[price][ordercnt].amount.mul(price);
+        require(msg.sender == self.biddom[price][orderid].addr);
+        value = self.biddom[price][orderid].amount.mul(price);
         value = value.shiftRight(80);
-        fees = value.mul(self.takerfeeratio);
-        fees = fees.shiftRight(80);
+        if (msg.sender!=self.owner){
+            fees = value.mul(self.takerfeeratio);
+            fees = fees.shiftRight(80);
+        }else
+            fees=0;
         value = value.sub(fees);
 
         basetoken.cointotalfees = basetoken.cointotalfees.add(fees);
         if (basetoken.id==0)
             require(msg.sender.send(value));
         else
-            maintoken.tokencontract.transfer_from(address(this), msg.sender, value);
+            basetoken.tokencontract.transfer_from(address(this), msg.sender, value);
 
         self.bidqueuelist[price].remove(orderid);
         if (self.bidqueuelist[price].sizeOf()==0){
+            if (self.bestbid==price){
+                self.bestbid = self.askpricelist.step(price,false);
+                emit Quotes(self.id, self.bestask, self.bestbid);
+            }
             self.bidpricelist.remove(price);
         }
+
+
 
     }
 
     function limitSell_token_x(Pair storage self, LibToken.Token storage maintoken, uint price, uint prevprice, uint amount) internal {
-        // Entry memory order;
         uint total;
         uint fees;
-
 
         assembly {
             //retrieve the size of the code on target address, this needs assembly
@@ -151,18 +242,20 @@ library LibPair {
         if (self.askpricelist.nodeExists(price)==true){
             self.askqueuelist[price].push(ordercnt,false);
         }else{
-            require(price>prevprice,"Wrong price 1");
+            require(price>prevprice || prevprice==0,"Wrong price 1");
             total = self.askpricelist.step(prevprice,true);
-            require(price<total,"Wrong price 2");//total=next;
+            require(price<total || total==0,"Wrong price 2");//total=next;
             self.askpricelist.insert(prevprice,price,true);
             self.askqueuelist[price].push(ordercnt,false);
         }
+        if ((msg.sender!=self.owner) && (msg.sender!=self.market)){
+            fees = amount.mul(self.makerfeeratio);
+            fees = fees.shiftRight(80);
+            maintoken.cointotalfees = maintoken.cointotalfees.add(fees);
+        }else
+            fees=0;
 
-        fees = amount.mul(self.makerfeeratio);
-        fees = fees.shiftRight(80);
-        maintoken.cointotalfees = maintoken.cointotalfees.add(fees);
-
-        total = fees.add(amount);
+        total = amount.sub(fees);
         maintoken.tokencontract.transfer_from(msg.sender, address(this), total);
 
         if (price<self.bestask || self.bestask==0){
@@ -171,7 +264,6 @@ library LibPair {
         }
 
         emit PlaceOrder(self.id, msg.sender, price, ordercnt );
-        //self.ordercnt++;
     }
 
     function marketBuyFull_token_eth(Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint price, uint slippage) internal {
@@ -195,11 +287,15 @@ library LibPair {
         uint n;
         uint vols = 0;
         uint amount;
-       // if (ini==false){
-        total = value.mul(self.takerfeeratio);
-        total = total.shiftRight(80);
+        if (msg.sender!=self.owner){
+            total = value.mul(self.takerfeeratio);
+            total = total.shiftRight(80);
+            basetoken.cointotalfees.add(total);
+        }else
+            total=0;
+
         value = value.sub(total);
-        basetoken.cointotalfees.add(total);
+        
         //}
 
         do {
@@ -270,25 +366,48 @@ library LibPair {
     }
 
     function getPrevAsk(Pair storage self, uint price) internal view returns (uint){  
-        return self.askpricelist.seek(0,price, true);
+        return self.askpricelist.seek(0,price, false);
+    }
+
+    function getPrevBid(Pair storage self, uint price) internal view returns (uint){  
+        return self.bidpricelist.seek(0,price, true);
     }
 
     function askPriceExists(Pair storage self, uint price) internal view returns(bool){
         return self.askpricelist.nodeExists(price);
     }
 
+    function bidPriceExists(Pair storage self, uint price) internal view returns(bool){
+        return self.bidpricelist.nodeExists(price);
+    }
+
     function getAskDOMPrice(Pair storage self, uint prevprice) internal view returns(uint){
         return self.askpricelist.step(prevprice,true);   
     }
 
-    function getAskDOMVolume(Pair storage self, uint price) internal view returns(uint){
-        uint n = self.askqueuelist[price].step(0,true);
-        if (n==0) return 0;
-        uint acc = self.askdom[price][n].amount;
-        while(n!=0){
+    function getAskDOMPrice(Pair storage self, uint prevprice) internal view returns(uint){
+        return self.bidpricelist.step(prevprice,false);   
+    }
+
+    function getAskDOMAmounts(Pair storage self, uint price) internal view returns(uint){
+        uint acc=0;
+        uint n=0;
+        do{
             n = self.askqueuelist[price].step(n,true);
             acc = acc.add(self.askdom[price][n].amount);
-        }
+        }while(n!=0);
+
+        return acc;
+    }
+
+    function getBidDOMAmounts(Pair storage self, uint price) internal view returns(uint){
+        uint acc=0;
+        uint n=0;
+        do{
+            n = self.bidqueuelist[price].step(n,true);
+            acc = acc.add(self.askdom[price][n].amount);
+        }while(n!=0);
+
         return acc;
     }
 

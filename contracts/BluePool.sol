@@ -34,6 +34,8 @@ contract BluePool is Owned {
         require(m!=b);
         require((tokens.length) > m,"Invalid main token id");
         require((tokens.length) > b);
+        p.owner = owner;
+        p.market = address(this);
         pairs.push(p);
         require(pairs[pairs.length - 1].createPair(_name, m, b,makerfee, takerfee));
     }
@@ -66,8 +68,8 @@ contract BluePool is Owned {
     function getAskDOMPrice(uint pairid, uint prevprice) public view returns(uint){
         return pairs[pairid].getAskDOMPrice(prevprice);    
     }
-    function getAskDOMVolume(uint pairid, uint price) public view returns(uint){
-        return pairs[pairid].getAskDOMVolume(price);
+    function getAskDOMAmounts(uint pairid, uint price) public view returns(uint){
+        return pairs[pairid].getAskDOMAmounts(price);
     }
     function getFeesRatios(uint pairid) public view returns(uint[2]){
         return pairs[pairid].getFeesRatios();

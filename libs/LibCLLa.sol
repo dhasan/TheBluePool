@@ -59,16 +59,20 @@ library LibCLLa {
         if (exists(self)==false)
             return false;
         else{
-            a = self.cll[n][NEXT];
-
-            if (a!=NULL)
+            if (self.cll[HEAD][PREV] == n || self.cll[HEAD][NEXT] == n)
                 return true;
-            else{
-                a = self.cll[n][PREV];
+            else {
+                a = self.cll[n][NEXT];
+
                 if (a!=NULL)
                     return true;
-                else
-                    return false;
+                else{
+                    a = self.cll[n][PREV];
+                    if (a!=NULL)
+                        return true;
+                    else
+                        return false;
+                }
             }
         }
     }
