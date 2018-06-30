@@ -1,0 +1,3 @@
+[submodule "dapp/dhasan"]
+	path = dapp/dhasan
+	url = https://github.com/dhasan/dhasan.git
