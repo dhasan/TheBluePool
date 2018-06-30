@@ -99,9 +99,9 @@ library LibPair {
             do {
                 n = self.askqueuelist[p].step(n,true);
                 if (n==orderid)
-                    returns p;
-            }while(n!=orderid) && (n!=0)
-        }while((p!=0) &&(n!=orderid));
+                    return p;
+            }while((n!=orderid) && (n!=0));
+        }while((p!=0) && (n!=orderid));
 
         return 0;
     }
@@ -116,15 +116,16 @@ library LibPair {
             do {
                 n = self.bidqueuelist[p].step(n,true);
                 if (n==orderid)
-                    returns p;
-            }while(n!=orderid) && (n!=0)
-        }while((p!=0) &&(n!=orderid));
+                    return p;
+            }while((n!=orderid) && (n!=0));
+        }while((p!=0) && (n!=orderid));
 
         return 0;
     }
 
     function modify_ask_order_price(Pair storage self, LibToken.Token storage maintoken, uint orderid, uint price, uint newprice, uint newprevprice){
         Entry memory tempentry;
+	uint total;
 
         require(newprice>self.bestbid || self.bestbid==0);
         require(self.askpricelist.nodeExists(price));
@@ -385,7 +386,7 @@ library LibPair {
         return self.askpricelist.step(prevprice,true);   
     }
 
-    function getAskDOMPrice(Pair storage self, uint prevprice) internal view returns(uint){
+    function getBidDOMPrice(Pair storage self, uint prevprice) internal view returns(uint){
         return self.bidpricelist.step(prevprice,false);   
     }
 
