@@ -123,6 +123,14 @@ library LibPair {
         success = true;
     }
 
+    function limitSell_token_x(LibPair.Pair storage self, LibToken.Token storage maintoken, uint price, uint prevprice, uint amount) internal {
+        return self.limitSell_token_x(maintoken, price, prevprice, amount);
+    }
+
+    function marketBuyFull_token_eth(LibPair.Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint price, uint slippage) internal {
+        return self.marketBuyFull_token_eth(maintoken, basetoken, price, slippage);
+    }
+
     function getFeesRatios(Pair storage self) internal view returns(uint[2]){
         return [self.makerfeeratio, self.takerfeeratio];
     }

@@ -80,11 +80,11 @@ contract BluePool is Owned {
         return pairs[pairid].getFeesRatios();
     }
 
-    function get_ask_order_price(uint pairid, uint oriderid) public view returns(uint){
+    function get_ask_order_price(uint pairid, uint orderid) public view returns(uint){
         return pairs[pairid].get_ask_order_price(orderid);
     }
 
-    function get_bid_order_price(uint pairid, uint oriderid) public view returns(uint){
+    function get_bid_order_price(uint pairid, uint orderid) public view returns(uint){
         return pairs[pairid].get_bid_order_price(orderid);
     }
 
