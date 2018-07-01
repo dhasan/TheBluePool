@@ -9,7 +9,7 @@ library LibPairAsk {
     using SafeMath for uint;
     using LibCLLu for LibCLLu.CLL;
     using LibToken for LibToken.Token;
-    bytes32 constant public VERSION = "LibPair 0.0.1";
+    bytes32 constant public VERSION = "LibPairAsk 0.0.1";
 
     //ask
     function get_ask_order_price(LibPair.Pair storage self, uint orderid) internal view returns(uint) {
@@ -32,7 +32,7 @@ library LibPairAsk {
 
 
      //ask
-    function modify_ask_order_price(LibPair.Pair storage self, LibToken.Token storage maintoken, uint orderid, uint price, uint newprice, uint newprevprice) internal returns (bool sucees) {
+    function modify_ask_order_price(LibPair.Pair storage self, LibToken.Token storage maintoken, uint orderid, uint price, uint newprice, uint newprevprice) internal returns (bool success) {
         LibPair.Entry memory tempentry;
 	    uint total;
 
@@ -91,7 +91,7 @@ library LibPairAsk {
         if (maintoken.id==0)
             require(msg.sender.send(total));
         else
-            maintoken.tokencontract.transfer_from(address(this), msg.sender, total);
+            maintoken.transfer_from(address(this), msg.sender, total);
         self.askqueuelist[price].remove(orderid);
         if (self.askqueuelist[price].sizeOf()==0){
             if (self.bestask==price){
@@ -138,7 +138,7 @@ library LibPairAsk {
             fees=0;
 
         total = amount.sub(fees);
-        maintoken.tokencontract.transfer_from(msg.sender, address(this), total);
+        maintoken.transfer_from(msg.sender, address(this), total);
 
         if (price<self.bestask || self.bestask==0){
             self.bestask = price;
@@ -196,7 +196,7 @@ library LibPairAsk {
                         total = total.shiftRight(80);
 
                         require(self.askdom[p][n].addr.send(total));
-                        require(maintoken.tokencontract.transfer_from(address(this), msg.sender, self.askdom[p][n].amount));
+                        require(maintoken.transfer_from(address(this), msg.sender, self.askdom[p][n].amount));
                         
                         emit TradeFill(self.id, self.askdom[p][n].addr, n, -1*int(self.askdom[p][n].amount));
 
@@ -211,7 +211,7 @@ library LibPairAsk {
                         total = total.shiftRight(80);
 
                         require(self.askdom[p][n].addr.send(total));
-                        require(maintoken.tokencontract.transfer_from(address(this), msg.sender, amount.sub(vols)));
+                        require(maintoken.transfer_from(address(this), msg.sender, amount.sub(vols)));
                        
                         emit TradeFill(self.id, self.askdom[p][n].addr, n, -1*int(amount.sub(vols)));
 

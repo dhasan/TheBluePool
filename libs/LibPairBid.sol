@@ -9,11 +9,11 @@ library LibPairBid {
     using SafeMath for uint;
     using LibCLLu for LibCLLu.CLL;
     using LibToken for LibToken.Token;
-    bytes32 constant public VERSION = "LibPair 0.0.1";
+    bytes32 constant public VERSION = "LibPairBid 0.0.1";
 
 
      //bid
-    function limitBuy_token_eth(LibPair.Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint price, uint prevprice) internal {
+    function limitBuy_token_eth(LibPair.Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint price, uint prevprice) internal returns (bool success) {
          // Entry memory order;
         uint total;
         uint fees;
@@ -57,6 +57,8 @@ library LibPairBid {
 
         emit PlaceOrder(self.id, msg.sender, price, ordercnt );
 
+        success = true;
+
     }
 
     //bid
@@ -83,7 +85,7 @@ library LibPairBid {
     }
 
     //bid
-    function delete_bid_order(LibPair.Pair storage self, LibToken.Token storage basetoken, uint orderid, uint price) internal {
+    function delete_bid_order(LibPair.Pair storage self, LibToken.Token storage basetoken, uint orderid, uint price) internal returns (bool success){
         uint value;
         uint fees;
         require(self.bidpricelist.nodeExists(price));
@@ -102,7 +104,7 @@ library LibPairBid {
         if (basetoken.id==0)
             require(msg.sender.send(value));
         else
-            basetoken.tokencontract.transfer_from(address(this), msg.sender, value);
+            basetoken.transfer_from(address(this), msg.sender, value);
 
         self.bidqueuelist[price].remove(orderid);
         if (self.bidqueuelist[price].sizeOf()==0){
@@ -113,7 +115,7 @@ library LibPairBid {
             self.bidpricelist.remove(price);
         }
 
-
+        success = true;
 
     }
 

@@ -8,11 +8,11 @@ library LibToken {
         //uint coininvestment;
         uint cointotalfees;
 
-        BlueToken tokencontract;
+        address tokencontract;
     }  
     function createToken(Token storage self, uint id, address taddress) internal returns(bool success){
         self.id = id;
-        self.tokencontract = BlueToken(taddress);//new BlueToken(id, supply, name, desc, transfee);
+        self.tokencontract = (taddress);//new BlueToken(id, supply, name, desc, transfee);
         success = true;
     }
 /*
@@ -46,7 +46,7 @@ library LibToken {
 
     function withdrawFees(Token storage self, uint amount, address rcv) internal returns(bool success) {
         self.cointotalfees = self.cointotalfees.sub(amount);
-        require(self.tokencontract.transfer_from(address(this), rcv, amount));
+        require(BlueToken(self.tokencontract).transfer_from(address(this), rcv, amount));
         success = true;
     }
 

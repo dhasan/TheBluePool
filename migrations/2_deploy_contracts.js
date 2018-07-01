@@ -46,7 +46,13 @@ var BluePool = artifacts.require("./BluePool.sol");
             });
         });
     });
-
+/*
+LibCLLu - 106 692
+SafeMath - 74 748
+LibToken - 74 748
+LibPairAsk - 106 884
+LibPairBid - 
+ */
 
         //await deployer.deploy(LibCLLa, {from: accounts[0]});
         //await deployer.link(SafeMath, BlueToken);

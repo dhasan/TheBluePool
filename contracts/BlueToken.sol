@@ -87,9 +87,6 @@ contract BlueToken is ERC20Interface, Owned{
     }
 
     function transfer_from(address from, address to, uint tokens) onlyMarket public returns (bool success) {
-        uint fee;
-
-
         tokenbalances[from] = tokenbalances[from].sub(tokens);
         if (tokenbalances[from]==0){
             tokenslist.remove(from);
@@ -103,25 +100,7 @@ contract BlueToken is ERC20Interface, Owned{
         emit Transfer(from, to, tokens);
         return true;
     }
-/*
-    function transfer_self(address to, uint tokens) onlyMarket internal returns (bool success) {
-        uint fee;
 
-
-        tokenbalances[address(this)] = tokenbalances[address(this)].sub(tokens);
-        if (tokenbalances[address(this)]==0){
-            tokenslist.remove(address(this));
-        }
-        if (tokenslist.nodeExists(to)==false){
-            tokenslist.push(to,true);
-        }
-        tokenbalances[to] = tokenbalances[to].add(tokens);
-        
-
-        emit Transfer(address(this), to, tokens);
-        return true;
-    }
-*/
     function setFeeRatio(uint val) onlyOwner public returns(bool){
         transferfeeratio = val;
         return true;

@@ -131,6 +131,10 @@ library LibPair {
         success = self.limitSell_token_x(maintoken, price, prevprice, amount);
     }
 
+ /*   function get_ask_order_details(Pair storage self, uint orderid, uint price) internal view returns(address, uint) { //address and amount
+        return self.get_ask_order_details()
+    }*/
+
     function marketBuyFull_token_eth(Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint price, uint slippage) internal returns(bool success) {
         success = self.marketBuyFull_token_eth(maintoken, basetoken, price, slippage);
     }

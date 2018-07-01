@@ -15,9 +15,10 @@ contract BluePool is Owned {
     LibPair.Pair[] pairs;
     LibToken.Token[] tokens;  
 
-    constructor() Owned(this) public {
-        LibToken.Token memory t;
-        tokens.push(t);
+    constructor() Owned(address(0)) public {
+        //LibToken.Token  t;
+        //tokens.push(t);
+        tokens.length = 1;
 
     }   
     function createToken(address taddress) onlyOwner public returns(uint){
@@ -103,111 +104,7 @@ contract BluePool is Owned {
     function marketBuyFull_token_eth(uint pairid, uint price, uint slippage) public payable {
         require(pairs[pairid].marketBuyFull_token_eth(tokens[pairs[pairid].mainid], tokens[pairs[pairid].baseid], price, slippage));
     }
- /*   
-    function marketBuy_token_eth(uint pairid, uint price, uint amount, uint slippage, bool ini) public payable {
-        uint total;
-        uint ethacc = 0;
-
-        require( pairs[pairid].bestask!=0);
-        assembly {
-            //retrieve the size of the code on target address, this needs assembly
-            total := extcodesize(caller)
-        }
-        require(total==0);
-
-        if (ini==true)
-            require(msg.sender==owner);
-        
-        if ((price!=pairs[pairid].bestask) && (slippage!=0) && (price!=0)){
-            if (price>pairs[pairid].bestask){
-                require((price.sub(pairs[pairid].bestask)) < slippage);
-            }else{
-                require((pairs[pairid].bestask.sub(price)) < slippage);
-            }
-        }
-        uint p = pairs[pairid].bestask;
-        uint n;
-        uint vols = 0;
-        
-        do {
-            n=0;
-            do {
-                n = pairs[pairid].askqueuelist[p].step(n, true);
-                if (n!=0){
-                    if (pairs[pairid].askdom[p][n].amount<=amount.sub(vols)){
-                        total = p.mul(pairs[pairid].askdom[p][n].amount);
-                        total = total.shiftRight(80);
-
-                        if (pairs[pairid].askdom[p][n].initial==false)
-                            require(pairs[pairid].askdom[p][n].addr.send(total));
-                        else{
-                            tokens[pairs[pairid].baseid].coininvestment = tokens[pairs[pairid].baseid].coininvestment.add(total);
-                            tokens[pairs[pairid].mainid].coininvestment = tokens[pairs[pairid].mainid].coininvestment.sub(pairs[pairid].askdom[p][n].amount);
-                        }
-                        if (ini==false)
-                            require(tokens[pairs[pairid].mainid].tokencontract.transfer(msg.sender, pairs[pairid].askdom[p][n].amount));
-                        else{
-                            tokens[pairs[pairid].mainid].coininvestment = tokens[pairs[pairid].mainid].coininvestment.add(pairs[pairid].askdom[p][n].amount);
-                            tokens[pairs[pairid].baseid].coininvestment = tokens[pairs[pairid].baseid].coininvestment.sub(total);
-                        }
-                        emit TradeFill(pairid, pairs[pairid].askdom[p][n].addr, pairs[pairid].askdom[p][n].id, -1*int(pairs[pairid].askdom[p][n].amount));
-                        ethacc = ethacc.add(total);
-
-                        vols = vols.add(pairs[pairid].askdom[p][n].amount);
-                        pairs[pairid].askqueuelist[p].remove(n);
-                    }else{
-                        total = p.mul(amount.sub(vols));
-                        total = total.shiftRight(80);
-                        if (pairs[pairid].askdom[p][n].initial==false)
-                            require(pairs[pairid].askdom[p][n].addr.send(total));
-                        else{
-                            tokens[pairs[pairid].baseid].coininvestment = tokens[pairs[pairid].baseid].coininvestment.add(total);
-                            tokens[pairs[pairid].mainid].coininvestment = tokens[pairs[pairid].mainid].coininvestment.sub(amount.sub(vols));
-                        }
-                        if (ini==false)
-                            require(tokens[pairs[pairid].mainid].tokencontract.transfer(msg.sender, amount.sub(vols)));
-                        else{
-                            tokens[pairs[pairid].mainid].coininvestment = tokens[pairs[pairid].mainid].coininvestment.add(amount.sub(vols));
-                            tokens[pairs[pairid].baseid].coininvestment = tokens[pairs[pairid].baseid].coininvestment.sub(total);
-                        }
-                        emit TradeFill(pairid, pairs[pairid].askdom[p][n].addr, pairs[pairid].askdom[p][n].id, -1*int(pairs[pairid].askdom[p][n].amount));
-                        ethacc = ethacc.add(total);
-
-                        pairs[pairid].askdom[p][n].amount.sub(amount.sub(vols));
-                        vols = vols.add(amount.sub(vols));
-                    }
-                }
-            } while((n!=0) && (vols<amount));
-            if (n==0){
-                p = pairs[pairid].askpricelist.step(p,true); //ask is true
-                require(p!=0,"Not enought market volume");
-                if ((slippage!=0) && (price!=0))
-                    require((p.sub(price)) < slippage);
-            }
-        }while(vols<amount);
-        if (slippage!=0)
-            require((p.sub(price)) < slippage);
-        if (msg.sender!=owner){
-            
-            total = p.mul(amount);
-            total = total.shiftRight(80);
-            total = total.mul(self.takerfeeratio);
-            total = total.shiftRight(80);
-            //total is the fee
-            require(msg.value.sub(ethacc) > total);
-            tokens[pairs[pairid].baseid].cointotalfees.add(total);
-            ethacc = ethacc.add(total);
-            if (msg.value.sub(ethacc) > 0)
-                require(msg.sender.send(msg.value.sub(ethacc)));
-
-        }
-        if (p!=pairs[pairid].bestask){
-            pairs[pairid].bestask=p;
-            emit Quotes(pairid, pairs[pairid].bestask, pairs[pairid].bestbid);
-        }
-        emit Trade(pairid, msg.sender, p, int(amount));
-    }
-*/
+ 
   //  function depositInvestmentETH() onlyOwner public payable{
   //      tokens[0].coininvestment = tokens[0].coininvestment.add(msg.value);
   //  }
@@ -233,8 +130,9 @@ contract BluePool is Owned {
  //   }
 
     function withdrawFeesETH(uint amount, address rcv) onlyOwner public {
-        require(owner.send(amount));
+        
         tokens[0].cointotalfees = tokens[0].cointotalfees.sub(amount);
+        require(rcv.send(amount));
     }
 
     function withdrawFees(uint tid, uint amount, address rcv) onlyOwner public {
@@ -256,6 +154,7 @@ contract BluePool is Owned {
         
     }*/
 
+/*
     function getMarketDeposit(uint tid, address addr) public view returns(uint){ // this is for pairs library
         uint i;
         uint p;
@@ -310,7 +209,7 @@ contract BluePool is Owned {
         require(change.send(value));
         
     }
-
+*/
     function calculateEthPerToken(uint investdeposit, uint marketdeposit, uint eths) public pure returns(uint){
         uint acc = investdeposit.add(marketdeposit);
         acc = eths.div(acc);
