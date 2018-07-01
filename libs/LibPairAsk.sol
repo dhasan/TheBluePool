@@ -149,7 +149,7 @@ library LibPairAsk {
     }
 
     //ask
-    function marketBuyFull_token_eth(LibPair.Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint price, uint slippage) public returns (bool success) {
+    function marketBuyFull_token_eth(LibPair.Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint price, uint slippage) internal returns (bool success) {
         uint total;
         uint value = msg.value;
         require( self.bestask!=0);
@@ -178,8 +178,6 @@ library LibPairAsk {
             total=0;
 
         value = value.sub(total);
-        
-        //}
 
         do {
             n=0;
