@@ -52,6 +52,10 @@ library LibPair {
     function get_bid_order_price(Pair storage self, uint orderid) internal view returns(uint) {
         return self.get_bid_order_price(orderid);
     }
+
+    function modify_ask_order_price(Pair storage self, LibToken.Token storage maintoken, uint orderid, uint price, uint newprice, uint newprevprice) internal returns(bool success){
+        success = self.modify_ask_order_price(maintoken, orderid, price, newprice, newprevprice);
+    }
    
 
     function getPairTokenIds(Pair storage self) internal view returns(uint[2]){
@@ -123,12 +127,12 @@ library LibPair {
         success = true;
     }
 
-    function limitSell_token_x(LibPair.Pair storage self, LibToken.Token storage maintoken, uint price, uint prevprice, uint amount) internal {
-        return self.limitSell_token_x(maintoken, price, prevprice, amount);
+    function limitSell_token_x(Pair storage self, LibToken.Token storage maintoken, uint price, uint prevprice, uint amount) internal returns(bool success){
+        success = self.limitSell_token_x(maintoken, price, prevprice, amount);
     }
 
-    function marketBuyFull_token_eth(LibPair.Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint price, uint slippage) internal {
-        return self.marketBuyFull_token_eth(maintoken, basetoken, price, slippage);
+    function marketBuyFull_token_eth(Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint price, uint slippage) internal returns(bool success) {
+        success = self.marketBuyFull_token_eth(maintoken, basetoken, price, slippage);
     }
 
     function getFeesRatios(Pair storage self) internal view returns(uint[2]){
