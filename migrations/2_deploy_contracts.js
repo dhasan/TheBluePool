@@ -1,6 +1,8 @@
 var LibCLLa = artifacts.require("./libs/LibCLLa.sol");
 var LibCLLu = artifacts.require("./libs/LibCLLu.sol");
 var LibPair = artifacts.require("./libs/LibPair.sol");
+var LibPairAsk = artifacts.require("./libs/LibPairAsk.sol");
+var LibPairBid = artifacts.require("./libs/LibPairBid.sol");
 var LibToken = artifacts.require("./libs/LibToken.sol");
 var SafeMath = artifacts.require("../libs/SafeMath.sol");
 var BluePool = artifacts.require("./BluePool.sol");
@@ -12,17 +14,31 @@ var BluePool = artifacts.require("./BluePool.sol");
         return deployer.deploy(SafeMath, {from: accounts[0]}).then(function() {
             deployer.link(SafeMath, LibToken);
             return deployer.deploy(LibToken, {from: accounts[0]}).then(function() {
-                deployer.link(SafeMath, LibPair);
-                deployer.link(LibCLLu, LibPair);
-                deployer.link(LibToken, LibPair);
-                return deployer.deploy(LibPair, {from: accounts[0]}).then(function() {
-                    deployer.link(SafeMath, BluePool);
-                    deployer.link(LibCLLu, BluePool);
-                    deployer.link(LibToken, BluePool);
-                    deployer.link(LibPair, BluePool);
-                    return deployer.deploy(BluePool, {from: accounts[0]}).then(function() {
-                        return deployer.deploy(LibCLLa, {from: accounts[0]}).then(function() {
-                            console.log("2 done");
+                deployer.link(SafeMath, LibPairAsk);
+                deployer.link(LibCLLu, LibPairAsk);
+                deployer.link(LibToken, LibPairAsk);
+                return deployer.deploy(LibPairAsk, {from: accounts[0]}).then(function() {
+
+                    deployer.link(SafeMath, LibPairBid);
+                    deployer.link(LibCLLu, LibPairBid);
+                    deployer.link(LibToken, LibPairBid);
+                    return deployer.deploy(LibPairBid, {from: accounts[0]}).then(function() {
+
+                        deployer.link(SafeMath, LibPair);
+                        deployer.link(LibCLLu, LibPair);
+                        deployer.link(LibToken, LibPair);
+                        deployer.link(LibPairAsk, LibPair);
+                        deployer.link(LibPairBid, LibPair);
+                        return deployer.deploy(LibPair, {from: accounts[0]}).then(function() {
+                            deployer.link(SafeMath, BluePool);
+                            deployer.link(LibCLLu, BluePool);
+                            deployer.link(LibToken, BluePool);
+                            deployer.link(LibPair, BluePool);
+                            return deployer.deploy(BluePool, {from: accounts[0]}).then(function() {
+                                return deployer.deploy(LibCLLa, {from: accounts[0]}).then(function() {
+                                    console.log("2 done");
+                                });
+                            });
                         });
                     });
                 });
