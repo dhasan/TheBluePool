@@ -149,7 +149,8 @@ library LibPairAsk {
     }
 
     //ask
-    function marketBuyFull_token_eth(LibPair.Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint price, uint slippage) internal returns (bool success) {
+    
+    function marketBuyFull_token_eth(LibPair.Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint price, uint slippage) internal {
         uint total;
         uint value = msg.value;
         require( self.bestask!=0);
@@ -233,7 +234,7 @@ library LibPairAsk {
         }
         emit Trade(self.id, msg.sender, p, int(amount));
 
-        success = true;
+       // success = true;
     }
 
     event Quotes(uint pairid, uint ask, uint bid);    

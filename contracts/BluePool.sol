@@ -96,17 +96,17 @@ contract BluePool is Owned {
         return tokens[tokenid].cointotalfees;
     }
 
-    function limitSell_token_x(uint pairid, uint price, uint prevprice, uint amount) external {
+    function limitSell_token_x(uint pairid, uint price, uint prevprice, uint amount) public {
         require(pairs[pairid].limitSell_token_x(tokens[pairs[pairid].mainid], price, prevprice,amount));
     }
 
-    function modify_ask_order_price(uint pairid, uint orderid, uint price, uint newprice, uint newprevprice) external {
+    function modify_ask_order_price(uint pairid, uint orderid, uint price, uint newprice, uint newprevprice) public {
         require(pairs[pairid].modify_ask_order_price(tokens[pairs[pairid].mainid], orderid, price, newprice, newprevprice));
     }
 
-    function marketBuyFull_token_eth(uint pairid, uint price, uint slippage) external payable {
-       // require(pairs[pairid].marketBuyFull_token_eth(tokens[pairs[pairid].mainid], tokens[pairs[pairid].baseid], price, slippage));
-
+    function marketBuyFull_token_eth(uint pairid, uint price, uint slippage) public payable {
+        pairs[pairid].marketBuyFull_token_eth(tokens[pairs[pairid].mainid], tokens[pairs[pairid].baseid], price, slippage);
+/*
          uint total;
         uint value = msg.value;
         require( pairs[pairid].bestask!=0);
@@ -191,6 +191,7 @@ contract BluePool is Owned {
         emit Trade(pairs[pairid].id, msg.sender, p, int(amount));
 
        // success = true;
+*/
     }
 
     function withdrawFeesETH(uint amount, address rcv) onlyOwner public {

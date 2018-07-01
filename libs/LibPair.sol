@@ -134,12 +134,12 @@ library LibPair {
  /*   function get_ask_order_details(Pair storage self, uint orderid, uint price) public view returns(address, uint) { //address and amount
         return self.get_ask_order_details()
     }*/
-/*
-    function marketBuyFull_token_eth(Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint price, uint slippage) internal returns(bool success) {
-        success = self.marketBuyFull_token_eth(maintoken, basetoken, price, slippage);
+
+    function marketBuyFull_token_eth(Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint price, uint slippage) internal{
+        self.marketBuyFull_token_eth(maintoken, basetoken, price, slippage);
     }
 
-*/
+
     function getFeesRatios(Pair storage self) public view returns(uint[2]){
         return [self.makerfeeratio, self.takerfeeratio];
     }
