@@ -25,9 +25,6 @@ contract BluePool is Owned {
         tokens.push(t);
         require(tokens[tokens.length - 1].createToken(tokens.length - 1,taddress));
     }  
-    function getTokensCount() public view returns(uint){
-        return tokens.length;
-    }
 
     function createPair(bytes8 _name, uint m, uint b, uint makerfee, uint takerfee) onlyOwner public {
         LibPair.Pair memory p;
@@ -35,20 +32,14 @@ contract BluePool is Owned {
         require((tokens.length) > m,"Invalid main token id");
         require((tokens.length) > b);
         p.owner = owner;
-        p.market = address(this);
         pairs.push(p);
         require(pairs[pairs.length - 1].createPair(_name, m, b,makerfee, takerfee));
     }
-    /*
-    function generateTokens(uint tid, uint amount) onlyOwner public { 
-        require(tid>0);
-        require(tokens[tid].generateTokens(amount));
+
+    function getTokensCount() public view returns(uint){
+        return tokens.length;
     }
-    function destroyTokens(uint tid, uint amount) onlyOwner public { 
-        require(tid>0);
-        require(tokens[tid].destroyTokens(amount));
-    }
-    */
+
     function getPairTokenIds(uint pairid) public view returns(uint[2]){
         return pairs[pairid].getPairTokenIds();
     }
@@ -62,23 +53,40 @@ contract BluePool is Owned {
     function getPrevAsk(uint pairid, uint price) public view returns (uint){     
         return pairs[pairid].getPrevAsk(price);
     }
+    function getPrevBid(uint pairid, uint price) public view returns (uint){     
+        return pairs[pairid].getPrevBid(price);
+    }
     function askPriceExists(uint pairid, uint price) public view returns(bool){
         return pairs[pairid].askPriceExists(price);
     }
+
+    function bidPriceExists(uint pairid, uint price) public view returns(bool){
+        return pairs[pairid].bidPriceExists(price);
+    }
+
     function getAskDOMPrice(uint pairid, uint prevprice) public view returns(uint){
         return pairs[pairid].getAskDOMPrice(prevprice);    
+    }
+    function getBidDOMPrice(uint pairid, uint prevprice) public view returns(uint){
+        return pairs[pairid].getBidDOMPrice(prevprice);    
     }
     function getAskDOMAmounts(uint pairid, uint price) public view returns(uint){
         return pairs[pairid].getAskDOMAmounts(price);
     }
+    function getBidDOMAmounts(uint pairid, uint price) public view returns(uint){
+        return pairs[pairid].getBidDOMAmounts(price);
+    }
     function getFeesRatios(uint pairid) public view returns(uint[2]){
         return pairs[pairid].getFeesRatios();
     }
-    // function setFeeRatios(uint maker, uint taker) public onlyOwner returns(bool){
-    //     makerfeeratio = maker;
-    //     takerfeeratio = taker;
-    //     return true;
-    // }
+
+    function get_ask_order_price(uint pairid, uint oriderid) public view returns(uint){
+        return pairs[pairid].get_ask_order_price(orderid);
+    }
+
+    function get_bid_order_price(uint pairid, uint oriderid) public view returns(uint){
+        return pairs[pairid].get_bid_order_price(orderid);
+    }
 
     function getFeesTotal(uint tokenid) public view onlyOwner returns(uint) {
         return tokens[tokenid].cointotalfees;

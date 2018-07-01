@@ -39,6 +39,8 @@ var BluePool = artifacts.require("./BluePool.sol");
  
 };
 
+//0x2ab06f20e2CEe5c20d84F37a27eBc77feA19003b
+//0x0acfabd360b9b3e21450ef7e29ca2383ed090c7a
 
 /*
 get Accound address[0]
