@@ -1,6 +1,6 @@
 var HDWalletProvider = require("truffle-hdwallet-provider");
 
-var mnemonic = "opinion destroy betray love turkey remote mother bike air tea floor computer";
+var mnemonic = "opinion destroy betray love turkey remote mother bike air tea floor compute";
 
 module.exports = {
   networks: {
@@ -14,7 +14,7 @@ module.exports = {
       	return new HDWalletProvider(mnemonic, "https://ropsten.infura.io/aLjkBlysDHdMmhTiiyXW");
       },
       gasPrice: 10000000000,
-      gas: 670000,     
+      gas: 672000,     
       network_id: 3
     }
   }
