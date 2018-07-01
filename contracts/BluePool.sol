@@ -105,7 +105,92 @@ contract BluePool is Owned {
     }
 
     function marketBuyFull_token_eth(uint pairid, uint price, uint slippage) external payable {
-        require(pairs[pairid].marketBuyFull_token_eth(tokens[pairs[pairid].mainid], tokens[pairs[pairid].baseid], price, slippage));
+       // require(pairs[pairid].marketBuyFull_token_eth(tokens[pairs[pairid].mainid], tokens[pairs[pairid].baseid], price, slippage));
+
+         uint total;
+        uint value = msg.value;
+        require( pairs[pairid].bestask!=0);
+        assembly {
+            //retrieve the size of the code on target address, this needs assembly
+            total := extcodesize(caller)
+        }
+        require(total==0);
+        
+        if ((price!=pairs[pairid].bestask) && (slippage!=0) && (price!=0)){
+            if (price>pairs[pairid].bestask){
+                require((price.sub(pairs[pairid].bestask)) < slippage);
+            }else{
+                require((pairs[pairid].bestask.sub(price)) < slippage);
+            }
+        }
+        uint p = pairs[pairid].bestask;
+        uint n;
+        uint vols = 0;
+        uint amount;
+        if (msg.sender!=pairs[pairid].owner){
+            total = value.mul(pairs[pairid].takerfeeratio);
+            total = total.shiftRight(80);
+            tokens[pairs[pairid].baseid].cointotalfees.add(total);
+        }else
+            total=0;
+
+        value = value.sub(total);
+
+        do {
+            n=0;
+            do {
+                n = pairs[pairid].askqueuelist[p].step(n, true);
+                amount = value.shiftLeft(80);
+                amount = value.div(p);
+                if (n!=0){
+                    
+                    if (pairs[pairid].askdom[p][n].amount<=amount.sub(vols)){
+                        total = p.mul(pairs[pairid].askdom[p][n].amount);
+                        total = total.shiftRight(80);
+
+                        require(pairs[pairid].askdom[p][n].addr.send(total));
+                        require(tokens[pairs[pairid].mainid].transfer_from(address(this), msg.sender, pairs[pairid].askdom[p][n].amount));
+                        
+                        emit TradeFill(pairs[pairid].id, pairs[pairid].askdom[p][n].addr, n, -1*int(pairs[pairid].askdom[p][n].amount));
+
+                        vols = vols.add(pairs[pairid].askdom[p][n].amount);
+                        pairs[pairid].askqueuelist[p].remove(n);
+                        if (pairs[pairid].askqueuelist[p].sizeOf()==0){
+                            pairs[pairid].askpricelist.remove(p);
+                        }
+                        value = value.sub(total);
+                    }else{
+                        total = p.mul(amount.sub(vols));
+                        total = total.shiftRight(80);
+
+                        require(pairs[pairid].askdom[p][n].addr.send(total));
+                        require(tokens[pairs[pairid].mainid].transfer_from(address(this), msg.sender, amount.sub(vols)));
+                       
+                        emit TradeFill(pairs[pairid].id, pairs[pairid].askdom[p][n].addr, n, -1*int(amount.sub(vols)));
+
+                        pairs[pairid].askdom[p][n].amount.sub(amount.sub(vols));
+                        vols = vols.add(amount.sub(vols));
+                        value = value.sub(total);
+                    }
+                }
+            } while((n!=0) && (vols<amount));
+            if (n==0){
+                p = pairs[pairid].askpricelist.step(p,true); //ask is true
+                require(p!=0,"Not enought market volume");
+                if ((slippage!=0) && (price!=0))
+                    require((p.sub(price)) < slippage);
+            }
+        }while(vols<amount);
+        if (slippage!=0)
+            require((p.sub(price)) < slippage);
+
+        if (p!=pairs[pairid].bestask){
+            pairs[pairid].bestask=p;
+            emit Quotes(pairs[pairid].id, pairs[pairid].bestask, pairs[pairid].bestbid);
+        }
+        emit Trade(pairs[pairid].id, msg.sender, p, int(amount));
+
+       // success = true;
     }
 
     function withdrawFeesETH(uint amount, address rcv) onlyOwner public {

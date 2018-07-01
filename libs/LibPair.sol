@@ -134,95 +134,12 @@ library LibPair {
  /*   function get_ask_order_details(Pair storage self, uint orderid, uint price) public view returns(address, uint) { //address and amount
         return self.get_ask_order_details()
     }*/
-
+/*
     function marketBuyFull_token_eth(Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint price, uint slippage) internal returns(bool success) {
-       // success = self.marketBuyFull_token_eth(maintoken, basetoken, price, slippage);
-        uint total;
-        uint value = msg.value;
-        require( self.bestask!=0);
-        assembly {
-            //retrieve the size of the code on target address, this needs assembly
-            total := extcodesize(caller)
-        }
-        require(total==0);
-        
-        if ((price!=self.bestask) && (slippage!=0) && (price!=0)){
-            if (price>self.bestask){
-                require((price.sub(self.bestask)) < slippage);
-            }else{
-                require((self.bestask.sub(price)) < slippage);
-            }
-        }
-        uint p = self.bestask;
-        uint n;
-        uint vols = 0;
-        uint amount;
-        if (msg.sender!=self.owner){
-            total = value.mul(self.takerfeeratio);
-            total = total.shiftRight(80);
-            basetoken.cointotalfees.add(total);
-        }else
-            total=0;
-
-        value = value.sub(total);
-
-        do {
-            n=0;
-            do {
-                n = self.askqueuelist[p].step(n, true);
-                amount = value.shiftLeft(80);
-                amount = value.div(p);
-                if (n!=0){
-                    
-                    if (self.askdom[p][n].amount<=amount.sub(vols)){
-                        total = p.mul(self.askdom[p][n].amount);
-                        total = total.shiftRight(80);
-
-                        require(self.askdom[p][n].addr.send(total));
-                        require(maintoken.transfer_from(address(this), msg.sender, self.askdom[p][n].amount));
-                        
-                        emit TradeFill(self.id, self.askdom[p][n].addr, n, -1*int(self.askdom[p][n].amount));
-
-                        vols = vols.add(self.askdom[p][n].amount);
-                        self.askqueuelist[p].remove(n);
-                        if (self.askqueuelist[p].sizeOf()==0){
-                            self.askpricelist.remove(p);
-                        }
-                        value = value.sub(total);
-                    }else{
-                        total = p.mul(amount.sub(vols));
-                        total = total.shiftRight(80);
-
-                        require(self.askdom[p][n].addr.send(total));
-                        require(maintoken.transfer_from(address(this), msg.sender, amount.sub(vols)));
-                       
-                        emit TradeFill(self.id, self.askdom[p][n].addr, n, -1*int(amount.sub(vols)));
-
-                        self.askdom[p][n].amount.sub(amount.sub(vols));
-                        vols = vols.add(amount.sub(vols));
-                        value = value.sub(total);
-                    }
-                }
-            } while((n!=0) && (vols<amount));
-            if (n==0){
-                p = self.askpricelist.step(p,true); //ask is true
-                require(p!=0,"Not enought market volume");
-                if ((slippage!=0) && (price!=0))
-                    require((p.sub(price)) < slippage);
-            }
-        }while(vols<amount);
-        if (slippage!=0)
-            require((p.sub(price)) < slippage);
-
-        if (p!=self.bestask){
-            self.bestask=p;
-            emit Quotes(self.id, self.bestask, self.bestbid);
-        }
-        emit Trade(self.id, msg.sender, p, int(amount));
-
-        success = true;
+        success = self.marketBuyFull_token_eth(maintoken, basetoken, price, slippage);
     }
 
+*/
     function getFeesRatios(Pair storage self) public view returns(uint[2]){
         return [self.makerfeeratio, self.takerfeeratio];
     }
