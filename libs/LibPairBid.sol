@@ -117,5 +117,10 @@ library LibPairBid {
 
     }
 
+    event Quotes(uint pairid, uint ask, uint bid);    
+    event TradeFill(uint indexed pairid, address indexed addr, uint id, int amount);
+    event Trade(uint pairid, address addr, uint price, int amount);
+    event PlaceOrder(uint indexed pairid, address indexed addr, uint indexed price, uint id);
+
 
 }

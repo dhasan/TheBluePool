@@ -33,7 +33,7 @@ library LibPairAsk {
 
      //ask
     function modify_ask_order_price(LibPair.Pair storage self, LibToken.Token storage maintoken, uint orderid, uint price, uint newprice, uint newprevprice){
-        Entry memory tempentry;
+        LibPair.Entry memory tempentry;
 	    uint total;
 
         require(newprice>self.bestbid || self.bestbid==0);
@@ -230,4 +230,9 @@ library LibPairAsk {
         }
         emit Trade(self.id, msg.sender, p, int(amount));
     }
+
+    event Quotes(uint pairid, uint ask, uint bid);    
+    event TradeFill(uint indexed pairid, address indexed addr, uint id, int amount);
+    event Trade(uint pairid, address addr, uint price, int amount);
+    event PlaceOrder(uint indexed pairid, address indexed addr, uint indexed price, uint id);
 }
