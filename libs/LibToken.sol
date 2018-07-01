@@ -1,5 +1,5 @@
 pragma solidity ^0.4.23;
-import "../contracts/BlueToken.sol";
+//import "../contracts/BlueToken.sol";
 import "./SafeMath.sol";
 library LibToken {
     using SafeMath for uint;
@@ -44,12 +44,14 @@ library LibToken {
     }
 */
     function transfer_from(Token storage self, address from, address to, uint amount) internal returns(bool success){
-        require(BlueToken(self.tokencontract).transfer_from(from, to, amount));
+        //require(BlueToken(self.tokencontract).transfer_from(from, to, amount));
+        require(self.tokencontract.call(bytes4(keccak256("transfer_from(address,address,uint)")),from,to,amount));
         success = true;
     }
     function withdrawFees(Token storage self, uint amount, address rcv) internal returns(bool success) {
         self.cointotalfees = self.cointotalfees.sub(amount);
-        require(BlueToken(self.tokencontract).transfer_from(address(this), rcv, amount));
+        //require(BlueToken(self.tokencontract).transfer_from(address(this), rcv, amount));
+        require(self.tokencontract.call(bytes4(keccak256("transfer_from(address,address,uint)")),address(this),rcv,amount));
         success = true;
     }
 

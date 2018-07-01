@@ -16,24 +16,27 @@ contract BluePool is Owned {
     LibToken.Token[] tokens;  
 
     constructor() Owned(address(0)) public {
-        //LibToken.Token  t;
+        //LibToken.Token  memory t;
         //tokens.push(t);
         tokens.length = 1;
 
     }   
     function createToken(address taddress) onlyOwner public returns(uint){
-        LibToken.Token memory t;
-        tokens.push(t);
+        //LibToken.Token memory t;
+        //tokens.push(t);
+        tokens.length++;
         require(tokens[tokens.length - 1].createToken(tokens.length - 1,taddress));
     }  
 
     function createPair(bytes8 _name, uint m, uint b, uint makerfee, uint takerfee) onlyOwner public {
-        LibPair.Pair memory p;
+        //LibPair.Pair memory p;
         require(m!=b);
         require((tokens.length) > m,"Invalid main token id");
         require((tokens.length) > b);
-        p.owner = owner;
-        pairs.push(p);
+       // p.owner = owner;
+       // pairs.push(p);
+        pairs.length++;
+        pairs[pairs.length - 1].owner = owner;
         require(pairs[pairs.length - 1].createPair(_name, m, b,makerfee, takerfee));
     }
 
@@ -92,7 +95,7 @@ contract BluePool is Owned {
     function getFeesTotal(uint tokenid) public view onlyOwner returns(uint) {
         return tokens[tokenid].cointotalfees;
     }
-
+/*
     function limitSell_token_x(uint pairid, uint price, uint prevprice, uint amount) public {
         require(pairs[pairid].limitSell_token_x(tokens[pairs[pairid].mainid], price, prevprice,amount));
     }
@@ -104,31 +107,7 @@ contract BluePool is Owned {
     function marketBuyFull_token_eth(uint pairid, uint price, uint slippage) public payable {
         require(pairs[pairid].marketBuyFull_token_eth(tokens[pairs[pairid].mainid], tokens[pairs[pairid].baseid], price, slippage));
     }
- 
-  //  function depositInvestmentETH() onlyOwner public payable{
-  //      tokens[0].coininvestment = tokens[0].coininvestment.add(msg.value);
-  //  }
-    //sold tokens already in the owner address
-/*
-    function withdrawInvestmentETH(uint amount, address rcv) onlyOwner public {
-        require(owner.send(amount));
-        tokens[0].coininvestment = tokens[0].coininvestment.sub(amount);
-    }*/
-
- //   function depositInvestment(uint tid, uint amount) public { 
- //       require(tid>0);
- //       require(tokens[tid].depositInvestment(amount));
- //   }
- //   function withdrawInvestment(uint tid, uint amount) onlyOwner public { 
-  //      require(tid>0);
-  //      require(tokens[tid].withdrawInvestment(amount));
-  //  }
-
- //   function getInvestment(uint tid) public view returns(uint) { 
- //       require(tid>0);
- //       return tokens[tid].getInvestment();
- //   }
-
+*/
     function withdrawFeesETH(uint amount, address rcv) onlyOwner public {
         
         tokens[0].cointotalfees = tokens[0].cointotalfees.sub(amount);
@@ -140,21 +119,7 @@ contract BluePool is Owned {
         require(tokens[tid].withdrawFees(amount, rcv));
     }
 
-   // function withdrawTransFees(uint tid, uint amount) onlyOwner public {
-   //     require(tid>0);
-   //     require(tokens[tid].withdrawTransFees(amount));
-   // }
-/*
-    function setTransFeeRatio(uint tid, uint val) onlyOwner public {
-        require(tid>0);
-        require(tokens[tid].setTransFeeRatio(val));
-    }
-*/
-  /*  function tokenFallback(uint tid, address from, uint amount) public {
-        
-    }*/
 
-/*
     function getMarketDeposit(uint tid, address addr) public view returns(uint){ // this is for pairs library
         uint i;
         uint p;
@@ -209,7 +174,7 @@ contract BluePool is Owned {
         require(change.send(value));
         
     }
-*/
+
     function calculateEthPerToken(uint investdeposit, uint marketdeposit, uint eths) public pure returns(uint){
         uint acc = investdeposit.add(marketdeposit);
         acc = eths.div(acc);
