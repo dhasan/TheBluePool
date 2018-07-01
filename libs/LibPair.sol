@@ -18,7 +18,7 @@ library LibPair {
        //uint id;
         address addr;
         uint amount; //tokens count
-        uint value; //total eth
+      //  uint value; //total eth
        
     }
 
@@ -45,56 +45,56 @@ library LibPair {
         uint makerfeeratio;
     }
     
-    function get_ask_order_price(Pair storage self, uint orderid) internal view returns(uint) {
+    function get_ask_order_price(Pair storage self, uint orderid) public view returns(uint) {
         return self.get_ask_order_price(orderid);
     }
 
-    function get_bid_order_price(Pair storage self, uint orderid) internal view returns(uint) {
+    function get_bid_order_price(Pair storage self, uint orderid) public view returns(uint) {
         return self.get_bid_order_price(orderid);
     }
 
-    function modify_ask_order_price(Pair storage self, LibToken.Token storage maintoken, uint orderid, uint price, uint newprice, uint newprevprice) internal returns(bool success){
+    function modify_ask_order_price(Pair storage self, LibToken.Token storage maintoken, uint orderid, uint price, uint newprice, uint newprevprice) public returns(bool success){
         success = self.modify_ask_order_price(maintoken, orderid, price, newprice, newprevprice);
     }
    
 
-    function getPairTokenIds(Pair storage self) internal view returns(uint[2]){
+    function getPairTokenIds(Pair storage self) public view returns(uint[2]){
         return [self.mainid, self.baseid];
     }
 
-    function getPairName(Pair storage self) internal view returns(bytes8){
+    function getPairName(Pair storage self) public view returns(bytes8){
         return self.name;
     }
 
-    function getPrices(Pair storage self) internal view returns(uint[2]){
+    function getPrices(Pair storage self) public view returns(uint[2]){
         return [self.bestask, self.bestbid];
     }
 
-    function getPrevAsk(Pair storage self, uint price) internal view returns (uint){  
+    function getPrevAsk(Pair storage self, uint price) public view returns (uint){  
         return self.askpricelist.seek(0,price, false);
     }
 
-    function getPrevBid(Pair storage self, uint price) internal view returns (uint){  
+    function getPrevBid(Pair storage self, uint price) public view returns (uint){  
         return self.bidpricelist.seek(0,price, true);
     }
 
-    function askPriceExists(Pair storage self, uint price) internal view returns(bool){
+    function askPriceExists(Pair storage self, uint price) public view returns(bool){
         return self.askpricelist.nodeExists(price);
     }
 
-    function bidPriceExists(Pair storage self, uint price) internal view returns(bool){
+    function bidPriceExists(Pair storage self, uint price) public view returns(bool){
         return self.bidpricelist.nodeExists(price);
     }
 
-    function getAskDOMPrice(Pair storage self, uint prevprice) internal view returns(uint){
+    function getAskDOMPrice(Pair storage self, uint prevprice) public view returns(uint){
         return self.askpricelist.step(prevprice,true);   
     }
 
-    function getBidDOMPrice(Pair storage self, uint prevprice) internal view returns(uint){
+    function getBidDOMPrice(Pair storage self, uint prevprice) public view returns(uint){
         return self.bidpricelist.step(prevprice,false);   
     }
 
-    function getAskDOMAmounts(Pair storage self, uint price) internal view returns(uint){
+    function getAskDOMAmounts(Pair storage self, uint price) public view returns(uint){
         uint acc=0;
         uint n=0;
         do{
@@ -105,7 +105,7 @@ library LibPair {
         return acc;
     }
 
-    function getBidDOMAmounts(Pair storage self, uint price) internal view returns(uint){
+    function getBidDOMAmounts(Pair storage self, uint price) public view returns(uint){
         uint acc=0;
         uint n=0;
         do{
@@ -116,7 +116,7 @@ library LibPair {
         return acc;
     }
 
-    function createPair(Pair storage self, bytes8 _name, uint m, uint b, uint makerfee, uint takerfee) internal returns(bool success){
+    function createPair(Pair storage self, bytes8 _name, uint m, uint b, uint makerfee, uint takerfee) public returns(bool success){
         self.name = _name;
         self.mainid = m;
         self.baseid = b;
@@ -127,19 +127,19 @@ library LibPair {
         success = true;
     }
 
-    function limitSell_token_x(Pair storage self, LibToken.Token storage maintoken, uint price, uint prevprice, uint amount) internal returns(bool success){
+    function limitSell_token_x(Pair storage self, LibToken.Token storage maintoken, uint price, uint prevprice, uint amount) public returns(bool success){
         success = self.limitSell_token_x(maintoken, price, prevprice, amount);
     }
 
- /*   function get_ask_order_details(Pair storage self, uint orderid, uint price) internal view returns(address, uint) { //address and amount
+ /*   function get_ask_order_details(Pair storage self, uint orderid, uint price) public view returns(address, uint) { //address and amount
         return self.get_ask_order_details()
     }*/
 
-    function marketBuyFull_token_eth(Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint price, uint slippage) internal returns(bool success) {
+    function marketBuyFull_token_eth(Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint price, uint slippage) public returns(bool success) {
         success = self.marketBuyFull_token_eth(maintoken, basetoken, price, slippage);
     }
 
-    function getFeesRatios(Pair storage self) internal view returns(uint[2]){
+    function getFeesRatios(Pair storage self) public view returns(uint[2]){
         return [self.makerfeeratio, self.takerfeeratio];
     }
 

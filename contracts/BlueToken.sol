@@ -22,6 +22,7 @@ contract BlueToken is ERC20Interface, Owned{
     
     LibCLLa.CLL tokenslist;    
     mapping(address => uint) tokenbalances;
+    mapping(address => uint) awailable;
     
     
     constructor(uint id, uint supply, bytes4 sym, bytes32 desk, uint fee, address _market) Owned(_market) public {
@@ -77,11 +78,7 @@ contract BlueToken is ERC20Interface, Owned{
             tokenbalances[this] = tokenbalances[this].add(fee);
             transfertotalfees = transfertotalfees.add(fee);
         }
-     /*   if(codeLength>0) {
-            require(to==market);
-            BluePool receiver = BluePool(to);
-            receiver.tokenFallback(tokenid, msg.sender, tokens);
-        }*/
+
         emit Transfer(msg.sender, to, tokens);
         return true;
     }

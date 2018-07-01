@@ -95,19 +95,19 @@ contract BluePool is Owned {
     function getFeesTotal(uint tokenid) public view onlyOwner returns(uint) {
         return tokens[tokenid].cointotalfees;
     }
-/*
-    function limitSell_token_x(uint pairid, uint price, uint prevprice, uint amount) public {
+
+    function limitSell_token_x(uint pairid, uint price, uint prevprice, uint amount) external {
         require(pairs[pairid].limitSell_token_x(tokens[pairs[pairid].mainid], price, prevprice,amount));
     }
 
-    function modify_ask_order_price(uint pairid, uint orderid, uint price, uint newprice, uint newprevprice) public {
+    function modify_ask_order_price(uint pairid, uint orderid, uint price, uint newprice, uint newprevprice) external {
         require(pairs[pairid].modify_ask_order_price(tokens[pairs[pairid].mainid], orderid, price, newprice, newprevprice));
     }
 
-    function marketBuyFull_token_eth(uint pairid, uint price, uint slippage) public payable {
+    function marketBuyFull_token_eth(uint pairid, uint price, uint slippage) external payable {
         require(pairs[pairid].marketBuyFull_token_eth(tokens[pairs[pairid].mainid], tokens[pairs[pairid].baseid], price, slippage));
     }
-*/
+
     function withdrawFeesETH(uint amount, address rcv) onlyOwner public {
         
         tokens[0].cointotalfees = tokens[0].cointotalfees.sub(amount);

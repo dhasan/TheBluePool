@@ -13,7 +13,7 @@ library LibPairBid {
 
 
      //bid
-    function limitBuy_token_eth(LibPair.Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint price, uint prevprice) internal returns (bool success) {
+    function limitBuy_token_eth(LibPair.Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint price, uint prevprice) public returns (bool success) {
          // Entry memory order;
         uint total;
         uint fees;
@@ -62,7 +62,7 @@ library LibPairBid {
     }
 
     //bid
-    function get_bid_order_price(LibPair.Pair storage self, uint orderid) internal view returns(uint) {
+    function get_bid_order_price(LibPair.Pair storage self, uint orderid) public view returns(uint) {
         uint p=0;
         uint n=0;
 
@@ -80,12 +80,12 @@ library LibPairBid {
     }
 
      //bid
-    function get_bid_order_details(LibPair.Pair storage self, uint orderid, uint price) internal view returns(address, uint) { //address and amount
+    function get_bid_order_details(LibPair.Pair storage self, uint orderid, uint price) public view returns(address, uint) { //address and amount
         return (self.biddom[price][orderid].addr, self.biddom[price][orderid].amount);
     }
 
     //bid
-    function delete_bid_order(LibPair.Pair storage self, LibToken.Token storage basetoken, uint orderid, uint price) internal returns (bool success){
+    function delete_bid_order(LibPair.Pair storage self, LibToken.Token storage basetoken, uint orderid, uint price) public returns (bool success){
         uint value;
         uint fees;
         require(self.bidpricelist.nodeExists(price));
