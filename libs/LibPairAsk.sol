@@ -3,6 +3,7 @@ pragma solidity ^0.4.23;
 import "./SafeMath.sol";
 import "./LibCLLu.sol";
 import "./LibToken.sol";
+import "./LibPair.sol";
 
 library LibPairAsk {
     using SafeMath for uint;
@@ -28,7 +29,7 @@ library LibPairAsk {
         return 0;
     }
 
-    
+
 
      //ask
     function modify_ask_order_price(Pair storage self, LibToken.Token storage maintoken, uint orderid, uint price, uint newprice, uint newprevprice){

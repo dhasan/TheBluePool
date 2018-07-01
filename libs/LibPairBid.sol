@@ -3,6 +3,7 @@ pragma solidity ^0.4.23;
 import "./SafeMath.sol";
 import "./LibCLLu.sol";
 import "./LibToken.sol";
+import "./LibPair.sol";
 
 library LibPairBid {
     using SafeMath for uint;
@@ -12,7 +13,7 @@ library LibPairBid {
 
 
      //bid
-    function limitBuy_token_eth(Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint price, uint prevprice) internal {
+    function limitBuy_token_eth(LibPair.Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint price, uint prevprice) internal {
          // Entry memory order;
         uint total;
         uint fees;
@@ -59,7 +60,7 @@ library LibPairBid {
     }
 
     //bid
-    function get_bid_order_price(Pair storage self, uint orderid) internal view returns(uint) {
+    function get_bid_order_price(LibPair.Pair storage self, uint orderid) internal view returns(uint) {
         uint p=0;
         uint n=0;
 
@@ -77,12 +78,12 @@ library LibPairBid {
     }
 
      //bid
-    function get_bid_order_details(Pair storage self, uint orderid, uint price) internal view returns(address, uint) { //address and amount
+    function get_bid_order_details(LibPair.Pair storage self, uint orderid, uint price) internal view returns(address, uint) { //address and amount
         return (self.biddom[price][orderid].addr, self.biddom[price][orderid].amount);
     }
 
     //bid
-    function delete_bid_order(Pair storage self, LibToken.Token storage basetoken, uint orderid, uint price) internal {
+    function delete_bid_order(LibPair.Pair storage self, LibToken.Token storage basetoken, uint orderid, uint price) internal {
         uint value;
         uint fees;
         require(self.bidpricelist.nodeExists(price));
