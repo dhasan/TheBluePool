@@ -12,7 +12,7 @@ library LibPairAsk {
     bytes32 constant public VERSION = "LibPair 0.0.1";
 
     //ask
-    function get_ask_order_price(Pair storage self, uint orderid) internal view returns(uint) {
+    function get_ask_order_price(LibPair.Pair storage self, uint orderid) internal view returns(uint) {
         uint p=0;
         uint n=0;
 
@@ -32,7 +32,7 @@ library LibPairAsk {
 
 
      //ask
-    function modify_ask_order_price(Pair storage self, LibToken.Token storage maintoken, uint orderid, uint price, uint newprice, uint newprevprice){
+    function modify_ask_order_price(LibPair.Pair storage self, LibToken.Token storage maintoken, uint orderid, uint price, uint newprice, uint newprevprice){
         Entry memory tempentry;
 	    uint total;
 
@@ -69,12 +69,12 @@ library LibPairAsk {
         }
     }
     //ask
-    function get_ask_order_details(Pair storage self, uint orderid, uint price) internal view returns(address, uint) { //address and amount
+    function get_ask_order_details(LibPair.Pair storage self, uint orderid, uint price) internal view returns(address, uint) { //address and amount
         return (self.askdom[price][orderid].addr, self.askdom[price][orderid].amount);
     }
    
     //ask
-    function delete_ask_order(Pair storage self, LibToken.Token storage maintoken, uint orderid, uint price) internal {
+    function delete_ask_order(LibPair.Pair storage self, LibToken.Token storage maintoken, uint orderid, uint price) internal {
         uint total;
         require(self.askpricelist.nodeExists(price));
         require(self.askqueuelist[price].nodeExists(orderid));
@@ -101,7 +101,7 @@ library LibPairAsk {
     }
     
     //ask
-    function limitSell_token_x(Pair storage self, LibToken.Token storage maintoken, uint price, uint prevprice, uint amount) internal {
+    function limitSell_token_x(LibPair.Pair storage self, LibToken.Token storage maintoken, uint price, uint prevprice, uint amount) internal {
         uint total;
         uint fees;
 
@@ -144,7 +144,7 @@ library LibPairAsk {
         emit PlaceOrder(self.id, msg.sender, price, ordercnt );
     }
     //ask
-    function marketBuyFull_token_eth(Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint price, uint slippage) internal {
+    function marketBuyFull_token_eth(LibPair.Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint price, uint slippage) internal {
         uint total;
         uint value = msg.value;
         require( self.bestask!=0);
