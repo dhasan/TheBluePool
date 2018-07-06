@@ -13,11 +13,16 @@ library LibPairBid {
 
 
      //bid
-    function limitBuy_token_eth(LibPair.Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint price, uint prevprice) public returns (bool success) {
+    function limitBuy(LibPair.Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint price, uint prevprice, uint valuep) public returns (bool success) {
          // Entry memory order;
         uint total;
         uint fees;
-        uint value = msg.value;
+
+        if (basetoken.id==0)
+        	require(valuep == msg.value);
+        else
+        	require(basetoken.transfer_from(msg.sender, address(this), valuep));
+        uint value = valuep;
 
         assembly {
             //retrieve the size of the code on target address, this needs assembly

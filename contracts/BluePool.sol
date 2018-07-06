@@ -96,16 +96,16 @@ contract BluePool is Owned {
         return tokens[tokenid].cointotalfees;
     }
 
-    function limitSell_token_x(uint pairid, uint price, uint prevprice, uint amount) public {
-        require(pairs[pairid].limitSell_token_x(tokens[pairs[pairid].mainid], price, prevprice,amount));
+    function limitSell(uint pairid, uint price, uint prevprice, uint amount) public {
+        require(pairs[pairid].limitSell(tokens[pairs[pairid].mainid], price, prevprice,amount));
     }
 
     function modify_ask_order_price(uint pairid, uint orderid, uint price, uint newprice, uint newprevprice) public {
         require(pairs[pairid].modify_ask_order_price(tokens[pairs[pairid].mainid], orderid, price, newprice, newprevprice));
     }
 
-    function marketBuyFull_token_eth(uint pairid, uint price, uint slippage) public payable {
-        pairs[pairid].marketBuyFull_token_eth(tokens[pairs[pairid].mainid], tokens[pairs[pairid].baseid], price, slippage);
+    function marketBuyFull(uint pairid, uint price, uint slippage, uint valuep) public payable {
+        pairs[pairid].marketBuyFull(tokens[pairs[pairid].mainid], tokens[pairs[pairid].baseid], price, slippage, valuep);
 /*
          uint total;
         uint value = msg.value;
@@ -194,15 +194,11 @@ contract BluePool is Owned {
 */
     }
 
-    function withdrawFeesETH(uint amount, address rcv) onlyOwner public {
-        
-        tokens[0].cointotalfees = tokens[0].cointotalfees.sub(amount);
-        require(rcv.send(amount));
-    }
-
     function withdrawFees(uint tid, uint amount, address rcv) onlyOwner public {
-        require(tid>0);
-        require(tokens[tid].withdrawFees(amount, rcv));
+        if (tid==0)
+            require(rcv.send(amount));
+        else
+            require(tokens[tid].withdrawFees(amount, rcv));
     }
 
 
@@ -224,41 +220,21 @@ contract BluePool is Owned {
                     }while(n!=0);
                 }while(p!=0);
             }else if  (pairs[i].baseid==tid){
-                //TODO: add biddom
+                p=0;
+                do {
+                    p = pairs[i].bidpricelist.step(p, false);
+                    n=0;
+                    do{
+                        n = pairs[i].bidqueuelist[p].step(n, true);
+                        if ((pairs[i].biddom[p][n].addr==addr) || (addr==address(0))){
+                            acc = acc.add(pairs[i].biddom[p][n].amount);
+
+                        }
+                    }while(n!=0);
+                }while(p!=0);
             }
         }
         return acc;
-    }
-
-    function rewardMarketDeposits(uint tid, uint ethpertoken, address change) onlyOwner public payable { // this is for pairs library
-        uint i;
-        uint p;
-        uint n;
-       // uint acc;
-        uint amount;
-        uint value = msg.value;
-        for(i=0;i<pairs.length;i++){
-            if (pairs[i].mainid==tid){
-                p=0;
-                do {
-                    p = pairs[i].askpricelist.step(p, true);
-                    n=0;
-                    do{
-                        n = pairs[i].askqueuelist[p].step(n, true);
-                        if ((pairs[i].askdom[p][n].addr!=address(this))){
-                            amount = pairs[i].askdom[p][n].amount.mul(ethpertoken);
-                            amount = amount.shiftRight(160);
-                            require(pairs[i].askdom[p][n].addr.send(amount));
-                            value = value.sub(amount);
-                        }                            
-                    }while(n!=0);
-                }while(p!=0);
-            }else if  (pairs[i].baseid==tid){
-                //TODO: add biddom
-            }
-        }
-        require(change.send(value));
-        
     }
 
     function calculateEthPerToken(uint investdeposit, uint marketdeposit, uint eths) public pure returns(uint){

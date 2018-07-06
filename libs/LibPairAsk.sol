@@ -103,7 +103,7 @@ library LibPairAsk {
     }
     
     //ask
-    function limitSell_token_x(LibPair.Pair storage self, LibToken.Token storage maintoken, uint price, uint prevprice, uint amount) public returns (bool success){
+    function limitSell(LibPair.Pair storage self, LibToken.Token storage maintoken, uint orderid, uint price, uint prevprice, uint amount) public returns (bool success){
         uint total;
         uint fees;
 
@@ -114,19 +114,19 @@ library LibPairAsk {
         require(total==0);
         require(price>self.bestbid || self.bestbid==0,"Invalid ask price");
         
-        uint ordercnt = uint256(keccak256(block.timestamp, msg.sender, price, amount));
+       // uint ordercnt = uint256(keccak256(block.timestamp, msg.sender, price, amount));
 
-        self.askdom[price][ordercnt].addr = msg.sender;    
-        self.askdom[price][ordercnt].amount = amount;
-
+        require(self.askqueuelist[price].nodeExists(orderid)==false);
+        self.askdom[price][orderid].addr = msg.sender;    
+        
         if (self.askpricelist.nodeExists(price)==true){
-            self.askqueuelist[price].push(ordercnt,false);
+            self.askqueuelist[price].push(orderid,false);
         }else{
             require(price>prevprice || prevprice==0,"Wrong price 1");
             total = self.askpricelist.step(prevprice,true);
             require(price<total || total==0,"Wrong price 2");//total=next;
             self.askpricelist.insert(prevprice,price,true);
-            self.askqueuelist[price].push(ordercnt,false);
+            self.askqueuelist[price].push(orderid,false);
         }
         if (msg.sender!=self.owner){
             fees = amount.mul(self.makerfeeratio);
@@ -134,9 +134,9 @@ library LibPairAsk {
             maintoken.cointotalfees = maintoken.cointotalfees.add(fees);
         }else
             fees=0;
-
-        total = amount.sub(fees);
-        maintoken.transfer_from(msg.sender, address(this), total);
+        self.askdom[price][orderid].amount = amount.sub(fees);
+       // total = amount.sub(fees);
+        maintoken.transfer_from(msg.sender, address(this), amount);
 
         if (price<self.bestask || self.bestask==0){
             self.bestask = price;
@@ -144,15 +144,19 @@ library LibPairAsk {
         }
 
 
-        emit PlaceOrder(self.id, msg.sender, price, ordercnt );
+        emit PlaceOrder(self.id, msg.sender, price, orderid );
     	success = true;
     }
 
     //ask
     
-    function marketBuyFull_token_eth(LibPair.Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint price, uint slippage) internal {
+    function marketBuyFull(LibPair.Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint price, uint slippage, uint valuep) internal {
         uint total;
-        uint value = msg.value;
+        if (basetoken.id==0)
+       		require(valuep==msg.value);
+       	else
+       		require(basetoken.transfer_from(msg.sender, address(this), valuep));
+        uint value = valuep;
         require( self.bestask!=0);
         assembly {
             //retrieve the size of the code on target address, this needs assembly
@@ -191,8 +195,10 @@ library LibPairAsk {
                     if (self.askdom[p][n].amount<=amount.sub(vols)){
                         total = p.mul(self.askdom[p][n].amount);
                         total = total.shiftRight(80);
-
-                        require(self.askdom[p][n].addr.send(total));
+                        if (basetoken.id==0)
+                        	require(self.askdom[p][n].addr.send(total));
+                        else
+                        	require(basetoken.transfer_from(address(this), self.askdom[p][n].addr, total));
                         require(maintoken.transfer_from(address(this), msg.sender, self.askdom[p][n].amount));
                         
                         emit TradeFill(self.id, self.askdom[p][n].addr, n, -1*int(self.askdom[p][n].amount));
@@ -206,8 +212,10 @@ library LibPairAsk {
                     }else{
                         total = p.mul(amount.sub(vols));
                         total = total.shiftRight(80);
-
-                        require(self.askdom[p][n].addr.send(total));
+                        if (basetoken.id==0)
+                        	require(self.askdom[p][n].addr.send(total));
+                        else
+                        	require(basetoken.transfer_from(address(this),self.askdom[p][n].addr, total));
                         require(maintoken.transfer_from(address(this), msg.sender, amount.sub(vols)));
                        
                         emit TradeFill(self.id, self.askdom[p][n].addr, n, -1*int(amount.sub(vols)));

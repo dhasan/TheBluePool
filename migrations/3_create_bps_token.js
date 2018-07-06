@@ -2,6 +2,9 @@ var LibCLLa = artifacts.require("./libs/LibCLLa.sol");
 var SafeMath = artifacts.require("../libs/SafeMath.sol");
 var BluePool = artifacts.require("./BluePool.sol");
 var BlueToken = artifacts.require("./BlueToken.sol");
+var BigNumber = require('bignumber.js');
+
+var pricebase = new BigNumber('100000000000000000000',16);
 
     module.exports = function (deployer, network, accounts) {
         var bluep;
@@ -14,15 +17,9 @@ var BlueToken = artifacts.require("./BlueToken.sol");
                 deployer.link(SafeMath, BlueToken);
                 LibCLLa.deployed().then(function(clainst) {
                     deployer.link(LibCLLa, BlueToken);
-                    return deployer.deploy(BlueToken, tokenscnt, 38000, "BPS", "BluePoolShares", 5, bluep.address, {from: accounts[0]}).then(function(instance) {
+                    return deployer.deploy(BlueToken, tokenscnt, 38000, "BPS", "BluePoolShares", new BigNumber(0.0005).times(pricebase).ceil(), bluep.address, {from: accounts[0]}).then(function(instance) {
                         return bluep.createToken(instance.address, {from: accounts[0]}).then(function(result) {
-                            console.log("3 done:");
-                            BluePool.deployed().then(function(instance) {
-                                //bluep = instance;
-                                return bluep.getTokensCount.call({from: accounts[0]});
-                            }).then(function(tokenscnt) {
-                                console.log("cnt:"+tokenscnt);
-                            });
+                            console.log("3 done:"); 
                         });
                     });  
                 });
