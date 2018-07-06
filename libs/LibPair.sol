@@ -127,16 +127,16 @@ library LibPair {
         success = true;
     }
 
-    function limitSell_token_x(Pair storage self, LibToken.Token storage maintoken, uint price, uint prevprice, uint amount) public returns(bool success){
-        success = self.limitSell_token_x(maintoken, price, prevprice, amount);
+    function limitSell(Pair storage self, LibToken.Token storage maintoken, uint price, uint prevprice, uint amount) public returns(bool success){
+        success = self.limitSell(maintoken, price, prevprice, amount);
     }
 
  /*   function get_ask_order_details(Pair storage self, uint orderid, uint price) public view returns(address, uint) { //address and amount
         return self.get_ask_order_details()
     }*/
 
-    function marketBuyFull_token_eth(Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint price, uint slippage) public {
-        self.marketBuyFull_token_eth(maintoken, basetoken, price, slippage);
+    function marketBuyFull(Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint price, uint slippage, uint valuep) public {
+        self.marketBuyFull(maintoken, basetoken, price, slippage, valuep);
     }
 
 

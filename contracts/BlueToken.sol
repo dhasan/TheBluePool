@@ -61,7 +61,7 @@ contract BlueToken is ERC20Interface, Owned{
     }
 
     function getAwailableOf(address adr) public view returns(uint){
-        return awailable[adr];
+       // return awailable[adr];
     }
 
     function balanceOf(address tokenOwner) public view returns (uint balance) {
@@ -87,17 +87,13 @@ contract BlueToken is ERC20Interface, Owned{
         }
         if (acc!=0){
             require(adr.send(acc));
-            event RewardReceived(tokenid, adr, acc);
+            emit RewardReceived(tokenid, adr, acc);
         }
         success=true;
     }
 
     function widthrawReward(address adr) public {
         require(tryReward(adr));
-    }
-
-    function getAwailable(address adr) public view returns(uint) {
-        require
     }
 
     function transfer(address to, uint tokens) public returns (bool success) {
@@ -134,7 +130,7 @@ contract BlueToken is ERC20Interface, Owned{
 
     function transfer_from(address from, address to, uint tokens) onlyMarket public returns (bool success) {
         
-        if (from!=owner) && (from!=market))
+        if ((from!=owner) && (from!=market))
             tryReward(from);
         if ((to!=owner) && (to!=market))
             tryReward(to);
