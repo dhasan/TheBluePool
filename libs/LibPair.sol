@@ -135,7 +135,7 @@ library LibPair {
         return self.get_ask_order_details()
     }*/
 
-    function marketBuyFull_token_eth(Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint price, uint slippage) internal{
+    function marketBuyFull_token_eth(Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint price, uint slippage) public {
         self.marketBuyFull_token_eth(maintoken, basetoken, price, slippage);
     }
 
