@@ -1,5 +1,9 @@
 var BluePool = artifacts.require("./BluePool.sol");
 var BigNumber = require('bignumber.js');
+<<<<<<< HEAD
+=======
+//4189374bc6a7ef9db3
+>>>>>>> 78a2b035d968ac4fd3b72da4b21a93e0dcbd7005
 
 var pricebase = new BigNumber('100000000000000000000',16);
 

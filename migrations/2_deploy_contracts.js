@@ -6,6 +6,9 @@ var LibPairBid = artifacts.require("./libs/LibPairBid.sol");
 var LibToken = artifacts.require("./libs/LibToken.sol");
 var SafeMath = artifacts.require("../libs/SafeMath.sol");
 var BluePool = artifacts.require("./BluePool.sol");
+var BigNumber = require('bignumber.js');
+
+var pricebase = new BigNumber('100000000000000000000',16);
 
     module.exports = function (deployer, network, accounts) {
 

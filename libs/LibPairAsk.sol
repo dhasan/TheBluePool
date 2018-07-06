@@ -150,7 +150,7 @@ library LibPairAsk {
 
     //ask
     
-    function marketBuyFull(LibPair.Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint price, uint slippage, uint valuep) internal {
+    function marketBuyFull_token_eth(LibPair.Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint price, uint slippage, uint valuep) public {
         uint total;
         if (basetoken.id==0)
        		require(valuep==msg.value);
