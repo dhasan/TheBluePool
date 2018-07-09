@@ -5,25 +5,91 @@ import "../libs/LibPair.sol";
 import "../libs/LibToken.sol";
 import "../libs/SafeMath.sol";
 import "./Owned.sol";
+import "./Feeless.sol";
 
-contract BluePool is Owned {
+contract BluePool is Owned,Feeless {
     using SafeMath for uint;
     using LibCLLu for LibCLLu.CLL;    
     using LibToken for LibToken.Token;
     using LibPair for LibPair.Pair;
 
+    uint constant ETHTOKENID = 0;
+    uint constant GASTOKENID = 1;
+
     LibPair.Pair[] pairs;
     LibToken.Token[] tokens;  
 
+    address feelessmaster;
+
+    modifier feelessPair(uint id) {
+        require(msgSender!=address(0));
+        if (pairs[id].msgSender != msgSender) {
+
+            pairs[id].msgSender  = msgSender;
+            _;
+            pairs[id].msgSender  = address(0);
+        } else {
+            _;
+        }
+    }
+
+    modifier feelessToken(uint id) {
+        require(msgSender!=address(0));
+        if (tokens[id].msgSender != msgSender) {
+
+            tokens[id].msgSender  = msgSender;
+            _;
+            tokens[id].msgSender  = address(0);
+        } else {
+            _;
+        }
+    }
+
+    function setFeelessMaster(address adr) public onlyOwner {
+        feelessmaster = adr;
+    }
+
+    function getFeelessMaster() public view returns(address){
+        return feelessmaster;
+    }
+
+    function feelessETHTransfer(address sender, address target, uint256 nonce, bytes sig, bool ext) public payable {
+
+        uint gasUsed = gasleft();
+        bytes memory prefix = "\x19Ethereum Signed Message:\n32";
+        bytes32 hash = keccak256(prefix, keccak256(target, data, nonce));
+        uint _msgSender = ECRecovery.recover(hash, sig);
+        require(_msgSender == sender);
+        require(nonces[sender]++ == nonce);
+        
+        require(target.call.value(msg.value)());
+        gasUsed = gasUsed - gasleft();
+        require(tokens[GASTOKENID].transfer_from(sender, feelessmaster, gasUsed));
+
+    }
+
+    function performFeelessTransaction(address sender, address target, bytes data, uint256 nonce, bytes sig, bool ext) public payable {
+        require(this == target);
+        
+        uint256 gasUsed = gasleft();
+        bytes memory prefix = "\x19Ethereum Signed Message:\n32";
+        bytes32 hash = keccak256(prefix, keccak256(target, data, nonce));
+        msgSender = ECRecovery.recover(hash, sig);
+        require(msgSender == sender);
+        require(nonces[msgSender]++ == nonce);
+        
+        require(target.call.value(msg.value)(data));
+        gasUsed = gasUsed - gasleft();
+        require(tokens[GASTOKENID].transfer_from(msgSender, address(this), gasUsed));
+
+        msgSender = address(0);
+    }
+    
     constructor() Owned(address(0)) public {
-        //LibToken.Token  memory t;
-        //tokens.push(t);
         tokens.length = 1;
 
     }   
     function createToken(address taddress) onlyOwner public returns(uint){
-        //LibToken.Token memory t;
-        //tokens.push(t);
         tokens.length++;
         require(tokens[tokens.length - 1].createToken(tokens.length - 1,taddress));
     }  
@@ -96,7 +162,7 @@ contract BluePool is Owned {
         return tokens[tokenid].cointotalfees;
     }
 
-    function limitSell(uint pairid, uint price, uint prevprice, uint amount) public {
+    function limitSell(uint pairid, uint price, uint prevprice, uint amount) public feeless feelessPair(pairid){
         require(pairs[pairid].limitSell(tokens[pairs[pairid].mainid], price, prevprice,amount));
     }
 

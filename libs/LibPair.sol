@@ -127,8 +127,8 @@ library LibPair {
         success = true;
     }
 
-    function limitSell(Pair storage self, LibToken.Token storage maintoken, uint price, uint prevprice, uint amount) public returns(bool success){
-        success = self.limitSell(maintoken, price, prevprice, amount);
+    function limitSell(Pair storage self, LibToken.Token storage maintoken, uint oriderid, uint price, uint prevprice, uint amount) public returns(bool success){
+        success = self.limitSell(maintoken, orderid, price, prevprice, amount);
     }
 
  /*   function get_ask_order_details(Pair storage self, uint orderid, uint price) public view returns(address, uint) { //address and amount

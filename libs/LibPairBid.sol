@@ -13,7 +13,7 @@ library LibPairBid {
 
 
      //bid
-    function limitBuy(LibPair.Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint price, uint prevprice, uint valuep) public returns (bool success) {
+    function limitBuy(LibPair.Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint orderid, uint price, uint prevprice, uint valuep) public returns (bool success) {
          // Entry memory order;
         uint total;
         uint fees;
@@ -21,7 +21,7 @@ library LibPairBid {
         if (basetoken.id==0)
         	require(valuep == msg.value);
         else
-        	require(basetoken.transfer_from(msg.sender, address(this), valuep));
+        	require(basetoken.transfer_from(self.msgSender, address(this), valuep));
         uint value = valuep;
 
         assembly {
@@ -32,9 +32,9 @@ library LibPairBid {
         require(total==0);
         require(price<self.bestask || self.bestask==0,"Invalid bid price");
 
-        uint ordercnt = uint256(keccak256(block.timestamp, msg.sender, price, msg.value));
-        require(self.bidqueuelist[price].nodeExists(ordercnt)==false);
-        if (msg.sender!=self.owner){
+        //uint ordercnt = uint256(keccak256(block.timestamp, self.msgSender, price, msg.value));
+        require(self.bidqueuelist[price].nodeExists(orderid)==false);
+        if (self.msgSender!=self.owner){
             fees = value.mul(self.makerfeeratio);
             fees = fees.shiftRight(80);
             basetoken.cointotalfees = basetoken.cointotalfees.add(fees);
@@ -42,10 +42,10 @@ library LibPairBid {
             fees = 0;
         value = value.sub(fees);
 
-        self.biddom[price][ordercnt].addr = msg.sender;   
+        self.biddom[price][orderid].addr = self.msgSender;   
         total = value.shiftLeft(80);
         total = value.div(price);
-        self.biddom[price][ordercnt].amount = total;
+        self.biddom[price][orderid].amount = total;
 
         if (self.bidpricelist.nodeExists(price)==false){
             require(price<prevprice || prevprice==0,"Wrong price 1");
@@ -54,13 +54,13 @@ library LibPairBid {
             self.bidpricelist.insert(prevprice,price,false);
         }
         
-        self.bidqueuelist[price].push(ordercnt,false);
+        self.bidqueuelist[price].push(orderid,false);
         if (price>self.bestbid|| self.bestbid==0){
             self.bestbid = price;
             emit Quotes(self.id, self.bestask, self.bestbid);
         }
 
-        emit PlaceOrder(self.id, msg.sender, price, ordercnt );
+        emit PlaceOrder(self.id, self.msgSender, price, orderid );
 
         success = true;
 
@@ -95,10 +95,10 @@ library LibPairBid {
         uint fees;
         require(self.bidpricelist.nodeExists(price));
         require(self.bidqueuelist[price].nodeExists(orderid));
-        require(msg.sender == self.biddom[price][orderid].addr);
+        require(self.msgSender == self.biddom[price][orderid].addr);
         value = self.biddom[price][orderid].amount.mul(price);
         value = value.shiftRight(80);
-        if (msg.sender!=self.owner){
+        if (self.msgSender!=self.owner){
             fees = value.mul(self.takerfeeratio);
             fees = fees.shiftRight(80);
         }else
@@ -107,9 +107,9 @@ library LibPairBid {
 
         basetoken.cointotalfees = basetoken.cointotalfees.add(fees);
         if (basetoken.id==0)
-            require(msg.sender.send(value));
+            require(self.msgSender.send(value));
         else
-            basetoken.transfer_from(address(this), msg.sender, value);
+            basetoken.transfer_from(address(this), self.msgSender, value);
 
         self.bidqueuelist[price].remove(orderid);
         if (self.bidqueuelist[price].sizeOf()==0){

@@ -9,6 +9,7 @@ library LibToken {
         uint cointotalfees;
 
         address tokencontract;
+        address msgSender;
     }  
     function createToken(Token storage self, uint id, address taddress) public returns(bool success){
         self.id = id;
