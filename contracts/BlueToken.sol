@@ -76,7 +76,7 @@ contract BlueToken is ERC20Interface, Owned{
             return;
 
         }
-        int i = int(ethpertoken.length - 1);
+        uint i = ethpertoken.length - 1;
         uint acc=0;
         while((claimed[i][adr]==false) && i>=0){
             val = tokenbalances[adr].mul(ethpertoken[i]);

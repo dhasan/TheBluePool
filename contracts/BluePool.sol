@@ -57,8 +57,8 @@ contract BluePool is Owned,Feeless {
 
         uint gasUsed = gasleft();
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
-        bytes32 hash = keccak256(prefix, keccak256(target, data, nonce));
-        uint _msgSender = ECRecovery.recover(hash, sig);
+        bytes32 hash = keccak256(prefix, keccak256(target, uint(0), nonce));
+        address _msgSender = ECRecovery.recover(hash, sig);
         require(_msgSender == sender);
         require(nonces[sender]++ == nonce);
         
@@ -162,16 +162,16 @@ contract BluePool is Owned,Feeless {
         return tokens[tokenid].cointotalfees;
     }
 
-    function limitSell(uint pairid, uint price, uint prevprice, uint amount) public feeless feelessPair(pairid){
-        require(pairs[pairid].limitSell(tokens[pairs[pairid].mainid], price, prevprice,amount));
+    function limitSell(uint pairid, uint orderid, uint price, uint prevprice, uint amount) public feeless feelessPair(pairid){
+        require(pairs[pairid].limitSell(tokens[pairs[pairid].mainid], orderid, price, prevprice,amount));
     }
 
     function modify_ask_order_price(uint pairid, uint orderid, uint price, uint newprice, uint newprevprice) public {
         require(pairs[pairid].modify_ask_order_price(tokens[pairs[pairid].mainid], orderid, price, newprice, newprevprice));
     }
 
-    function marketBuyFull(uint pairid, uint price, uint slippage, uint valuep) public payable {
-        pairs[pairid].marketBuyFull(tokens[pairs[pairid].mainid], tokens[pairs[pairid].baseid], price, slippage, valuep);
+    function marketBuyFull(uint pairid, uint slippage, uint valuep) public payable {
+        pairs[pairid].marketBuyFull(tokens[pairs[pairid].mainid], tokens[pairs[pairid].baseid], slippage, valuep);
 /*
          uint total;
         uint value = msg.value;

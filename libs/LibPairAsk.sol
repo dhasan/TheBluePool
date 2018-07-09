@@ -149,7 +149,7 @@ library LibPairAsk {
 
     //ask
     
-    function marketBuyFull(LibPair.Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint price, uint slippage, uint valuep) internal {
+    function marketBuyFull(LibPair.Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint slippage, uint valuep) internal {
         uint total;
         if (basetoken.id==0)
        		require(valuep==msg.value);
@@ -163,13 +163,6 @@ library LibPairAsk {
         }
         require(total==0);
         
-        if ((price!=self.bestask) && (slippage!=0) && (price!=0)){
-            if (price>self.bestask){
-                require((price.sub(self.bestask)) < slippage);
-            }else{
-                require((self.bestask.sub(price)) < slippage);
-            }
-        }
         uint p = self.bestask;
         uint n;
         uint vols = 0;
@@ -228,12 +221,11 @@ library LibPairAsk {
             if (n==0){
                 p = self.askpricelist.step(p,true); //ask is true
                 require(p!=0,"Not enought market volume");
-                if ((slippage!=0) && (price!=0))
-                    require((p.sub(price)) < slippage);
+                require((p.sub(self.bestask)) < slippage);
             }
         }while(vols<amount);
         if (slippage!=0)
-            require((p.sub(price)) < slippage);
+            require((p.sub(self.bestask)) < slippage);
 
         if (p!=self.bestask){
             self.bestask=p;

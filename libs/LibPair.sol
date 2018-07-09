@@ -31,6 +31,7 @@ library LibPair {
         uint bestbid;
 
         address owner;
+        address msgSender;
 
         LibCLLu.CLL askpricelist;
         mapping (uint => LibCLLu.CLL) askqueuelist;
@@ -127,7 +128,7 @@ library LibPair {
         success = true;
     }
 
-    function limitSell(Pair storage self, LibToken.Token storage maintoken, uint oriderid, uint price, uint prevprice, uint amount) public returns(bool success){
+    function limitSell(Pair storage self, LibToken.Token storage maintoken, uint orderid, uint price, uint prevprice, uint amount) public returns(bool success){
         success = self.limitSell(maintoken, orderid, price, prevprice, amount);
     }
 
@@ -135,8 +136,8 @@ library LibPair {
         return self.get_ask_order_details()
     }*/
 
-    function marketBuyFull(Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint price, uint slippage, uint valuep) public {
-        self.marketBuyFull(maintoken, basetoken, price, slippage, valuep);
+    function marketBuyFull(Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint slippage, uint valuep) public {
+        self.marketBuyFull(maintoken, basetoken, slippage, valuep);
     }
 
 
