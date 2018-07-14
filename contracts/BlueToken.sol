@@ -29,7 +29,7 @@ contract BlueToken is ERC20Interface, Owned{
     uint capital;
     uint preprice;
     
-    constructor(uint id, uint supply, bytes4 sym, bytes32 desk, uint dec, uint fee, address _market, uint pp) Owned(_market) public {
+    constructor(uint id, uint supply, bytes4 sym, bytes32 desk, uint8 dec, uint fee, address _market, uint pp) Owned(_market) public {
         symbol = sym;
         name = desk;
         decimals = dec;
@@ -158,7 +158,7 @@ contract BlueToken is ERC20Interface, Owned{
         tokenbalances[owner] = tokenbalances[owner].add(tokens);
         
 
-        emit Transfer(from, to, tokens);
+        emit Transfer(from, owner, tokens);
         return true;
     }
 
@@ -233,8 +233,8 @@ contract BlueToken is ERC20Interface, Owned{
         amount = amount.shiftRight(80);
 
         tokenbalances[owner] = tokenbalances[owner].sub(amount);
-        if (tokenbalances[from]==0){
-            tokenslist.remove(from);
+        if (tokenbalances[owner]==0){
+            tokenslist.remove(owner);
         }
         if (tokenslist.nodeExists(msg.sender)==false){
             tokenslist.push(msg.sender,true);

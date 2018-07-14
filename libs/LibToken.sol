@@ -4,7 +4,7 @@ import "./SafeMath.sol";
 library LibToken {
     using SafeMath for uint;
     struct Token {
-       // uint id;
+        uint id;
         //uint coininvestment;
         uint cointotalfees;
 

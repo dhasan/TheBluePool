@@ -178,8 +178,8 @@ library LibPairBid {
         require( self.bestbid!=0);
         assembly {
             //retrieve the size of the code on target address, this needs assembly
-            //total := extcodesize(caller)
-            total := extcodesize(self.msgSender);
+            total := extcodesize(caller)
+            //total := extcodesize(self.msgSender);
         }
         require(total==0);
         

@@ -67,7 +67,7 @@ contract BluePool is Owned,Feeless {
     
         require(_msgSender == sender);
         require (nonces[sender]++ == nonce);
-        require(target.call.value(msg.value)()==false)
+        require(target.call.value(msg.value)()==false);
         gasUsed = gasUsed - gasleft();
         require(tokens[GASTOKENID].consume_from(sender, gasUsed));
 
@@ -100,6 +100,7 @@ contract BluePool is Owned,Feeless {
         LibToken.Token memory token;
         require(tokenslist.nodeExists(tid)==false);
         tokenslist.push(tid, false);
+        tokens[tid].id = tid;
         require(tokens[tid].createToken(taddress));
     }  
 
@@ -220,7 +221,7 @@ contract BluePool is Owned,Feeless {
     function get_ask_order_details(uint pairid, uint orderid, uint price) public view returns(address, uint) { //address and amount
         require(orderid!=0 && price!=0);
         require(pairslist.nodeExists(pairid)==true);
-        require(pairs[pairid].get_ask_order_details(orderid, price));
+        return pairs[pairid].get_ask_order_details(orderid, price);
     }
 
     function modify_ask_order_price(uint pairid, uint orderid, uint price, uint newprice, uint newprevprice) public feeless feelessPair(pairid){
@@ -273,7 +274,7 @@ contract BluePool is Owned,Feeless {
         uint acc;
         uint i = pairslist.step(0, true);
         //for(i=0;i<pairs.length;i++){
-        while(i!=0)
+        while(i!=0){
             if (pairs[i].mainid==tid){
                 p=0;
                 do {
@@ -300,7 +301,7 @@ contract BluePool is Owned,Feeless {
                 }while(p!=0);
             }
             i = pairslist.step(i, true);
-        };
+        }
         return acc;
     }
    

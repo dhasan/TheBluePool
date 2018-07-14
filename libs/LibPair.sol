@@ -15,7 +15,7 @@ library LibPair {
     bytes32 constant public VERSION = "LibPair 0.0.1";
 
     struct Entry{
-       //uint id;
+        //uint id;
         address addr;
         uint amount; //tokens count
       //  uint value; //total eth
@@ -149,7 +149,7 @@ library LibPair {
     }
 
     function get_ask_order_details(Pair storage self, uint orderid, uint price) public view returns(address, uint) { //address and amount
-        return self.get_ask_order_details(orderid, price)
+        return self.get_ask_order_details(orderid, price);
     }
 
     function delete_ask_order(LibPair.Pair storage self, LibToken.Token storage maintoken, uint orderid, uint price) public returns (bool success){
