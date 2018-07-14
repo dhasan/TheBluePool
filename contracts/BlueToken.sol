@@ -27,12 +27,12 @@ contract BlueToken is ERC20Interface, Owned{
     uint[] ethpertoken;
 
     uint capital;
-   // uint surplus;
+    uint preprice;
     
-    constructor(uint id, uint supply, bytes4 sym, bytes32 desk, uint fee, address _market) Owned(_market) public {
+    constructor(uint id, uint supply, bytes4 sym, bytes32 desk, uint dec, uint fee, address _market, uint pp) Owned(_market) public {
         symbol = sym;
         name = desk;
-        decimals = 18;
+        decimals = dec;
         totalSupply = supply * 10**uint(decimals);
         
         if (tokenslist.nodeExists(owner)==false){
@@ -41,20 +41,9 @@ contract BlueToken is ERC20Interface, Owned{
         tokenbalances[owner] = totalSupply;
         tokenid= id;
         transferfeeratio = fee;
+        preprice = pp;
         emit Transfer(address(0), owner, totalSupply);
-    }  
-
-    function createTokens(uint amount) public onlyOwner returns(bool success) {
-        totalSupply = totalSupply.add(amount * 10**uint(decimals));
-        tokenbalances[owner] = tokenbalances[owner].add(amount * 10**uint(decimals));
-        success = true;
-    }  
-
-    function destroyTokens(uint amount) public onlyOwner returns(bool success) {
-        totalSupply = totalSupply.sub(amount* 10**uint(decimals));
-        tokenbalances[owner] = tokenbalances[owner].sub(amount* 10**uint(decimals));
-        success = true;
-    }
+    } 
 
     function totalSupply() public view returns (uint){
 	   return totalSupply;	
@@ -129,7 +118,8 @@ contract BlueToken is ERC20Interface, Owned{
     }
 
     function transfer_from(address from, address to, uint tokens) onlyMarket public returns (bool success) {
-        
+        require(preprice==0);
+
         if ((from!=owner) && (from!=market))
             tryReward(from);
         if ((to!=owner) && (to!=market))
@@ -154,6 +144,24 @@ contract BlueToken is ERC20Interface, Owned{
         return true;
     }
 
+    function consume_from(address from, uint tokens) onlyMarket public returns (bool success) {
+        require(preprice==0);
+
+        if (from!=owner)
+            capital = capital.sub(tokens);
+            
+        tokenbalances[from] = tokenbalances[from].sub(tokens);
+        if (tokenbalances[from]==0){
+            tokenslist.remove(from);
+        }
+       
+        tokenbalances[owner] = tokenbalances[owner].add(tokens);
+        
+
+        emit Transfer(from, to, tokens);
+        return true;
+    }
+
     function setFeeRatio(uint val) onlyOwner public returns(bool){
         transferfeeratio = val;
         return true;
@@ -169,8 +177,8 @@ contract BlueToken is ERC20Interface, Owned{
         return transfertotalfees;
     }
 
-    function getTokenOwnersCount() public view returns(int){
-        return int(tokenslist.sizeOf()); //minus owner and market
+    function getTokenOwnersCount() public view returns(uint){
+        return tokenslist.sizeOf(); 
     }
 
     function getTokenOwner() public view returns(address){
@@ -208,8 +216,30 @@ contract BlueToken is ERC20Interface, Owned{
 
     }
 
-    function () payable{
-        revert();
+    function setPreprice(uint p) public onlyOwner returns(bool success){
+        preprice = p;
+        success = true;
+    }
+
+    function getPreprice() public view returns (uint){
+        return preprice;
+    }
+
+    function () public payable{
+        uint amount;
+        require(preprice!=0);
+
+        amount = preprice.mul(msg.value);
+        amount = amount.shiftRight(80);
+
+        tokenbalances[owner] = tokenbalances[owner].sub(amount);
+        if (tokenbalances[from]==0){
+            tokenslist.remove(from);
+        }
+        if (tokenslist.nodeExists(msg.sender)==false){
+            tokenslist.push(msg.sender,true);
+        }
+        tokenbalances[msg.sender] = tokenbalances[msg.sender].add(amount);
     }
 
     

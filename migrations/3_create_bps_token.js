@@ -17,8 +17,8 @@ var pricebase = new BigNumber('100000000000000000000',16);
                 deployer.link(SafeMath, BlueToken);
                 LibCLLa.deployed().then(function(clainst) {
                     deployer.link(LibCLLa, BlueToken);
-                    return deployer.deploy(BlueToken, tokenscnt, 38000, "BPS", "BluePoolShares", new BigNumber(0.0005).times(pricebase).ceil(), bluep.address, {from: accounts[0]}).then(function(instance) {
-                        return bluep.createToken(instance.address, {from: accounts[0]}).then(function(result) {
+                    return deployer.deploy(BlueToken, tokenscnt, 38000, "BPS", "BluePoolShares", 18, new BigNumber(0.0005).times(pricebase).ceil(), bluep.address, pricebase, {from: accounts[0]}).then(function(instance) {
+                        return bluep.createToken(3, instance.address, {from: accounts[0]}).then(function(result) {
                             console.log("3 done:"); 
                         });
                     });  

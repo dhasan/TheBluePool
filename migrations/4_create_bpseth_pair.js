@@ -1,9 +1,6 @@
 var BluePool = artifacts.require("./BluePool.sol");
 var BigNumber = require('bignumber.js');
-<<<<<<< HEAD
-=======
 //4189374bc6a7ef9db3
->>>>>>> 78a2b035d968ac4fd3b72da4b21a93e0dcbd7005
 
 var pricebase = new BigNumber('100000000000000000000',16);
 
@@ -14,10 +11,10 @@ var pricebase = new BigNumber('100000000000000000000',16);
             return instance.createPair("BPSETH", 1, 0, new BigNumber(0.001).times(pricebase).ceil(), new BigNumber(0.002).times(pricebase).ceil(), {from: accounts[0]}); 
 
         }).then(function(result) {
-                console.log("4 done");
-            }).catch(function(e) {
-                // There was an error! Handle it.
-                console.log(e);
-            });
+            console.log("4 done");
+        }).catch(function(e) {
+            // There was an error! Handle it.
+            console.log(e);
+        });
     };
 

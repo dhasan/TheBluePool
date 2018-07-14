@@ -12,6 +12,7 @@ library LibPairAsk {
     bytes32 constant public VERSION = "LibPairAsk 0.0.1";
 
     //ask
+    //have
     function get_ask_order_price(LibPair.Pair storage self, uint orderid) public view returns(uint) {
         uint p=0;
         uint n=0;
@@ -149,7 +150,7 @@ library LibPairAsk {
 
     //ask
     
-    function marketBuyFull(LibPair.Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint slippage, uint valuep) internal {
+    function marketBuyFull(LibPair.Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint slippage, uint valuep) public {
         uint total;
         if (basetoken.id==0)
        		require(valuep==msg.value);

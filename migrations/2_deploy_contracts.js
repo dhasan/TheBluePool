@@ -44,7 +44,7 @@ var ECRecovery = artifacts.require("./libs/ECRecovery.sol");
             return deployer.deploy(BluePool, {from: accounts[0]});
         }).then(function(result){
             return deployer.deploy(LibCLLa, {from: accounts[0]});
-        }).then(function(result).{
+        }).then(function(result){
              console.log("2 done");
         });
     /*   

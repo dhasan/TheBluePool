@@ -12,7 +12,7 @@ library LibPairBid {
     bytes32 constant public VERSION = "LibPairBid 0.0.1";
 
 
-     //bid
+    //bid
     function limitBuy(LibPair.Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint orderid, uint price, uint prevprice, uint valuep) public returns (bool success) {
          // Entry memory order;
         uint total;
@@ -89,6 +89,50 @@ library LibPairBid {
         return (self.biddom[price][orderid].addr, self.biddom[price][orderid].amount);
     }
 
+    function modify_bid_order_price(LibPair.Pair storage self, uint orderid, uint price, uint newprice, uint newprevprice) public returns (bool success) {
+        LibPair.Entry memory tempentry;
+        uint total;
+
+        require(newprice<self.bestask || self.bestask==0);
+        require(self.bidpricelist.nodeExists(price));
+        require(self.bidqueuelist[price].nodeExists(orderid));
+        require(self.msgSender == self.biddom[price][orderid].addr);
+        tempentry.addr = self.biddom[price][orderid].addr;
+        tempentry.amount = self.biddom[price][orderid].amount;
+
+        self.bidqueuelist[price].remove(orderid);
+        if (self.bidqueuelist[price].sizeOf()==0){
+            if (self.bestbid==price){
+                self.bestbid = self.bidpricelist.step(price,false);
+                emit Quotes(self.id, self.bestask, self.bestbid);
+            }
+            self.bidpricelist.remove(price);
+        }
+
+        if (self.bidpricelist.nodeExists(newprice)==false){
+            require(newprice<newprevprice,"Wrong newprice 1");
+            total = self.bidpricelist.step(newprevprice,false);
+            require(newprice<total || total==0,"Wrong newprice 2");//total=next;
+            self.bidpricelist.insert(newprevprice,newprice,true);
+        }
+
+        self.bidqueuelist[newprice].push(orderid,false);
+
+        self.biddom[newprice][orderid].addr = tempentry.addr;
+        total = price.shiftLeft(80);
+        total = total.div(newprice);
+        total = total.shiftRight(80);
+        tempentry.amount = tempentry.amount.mul(total);
+        tempentry.amount = tempentry.amount.shiftRight(80);
+        self.biddom[newprice][orderid].amount = tempentry.amount;
+
+        if (newprice>self.bestbid){
+            emit Quotes(self.id, self.bestask, self.bestbid);   
+        }
+
+        success = true;
+    }
+
     //bid
     function delete_bid_order(LibPair.Pair storage self, LibToken.Token storage basetoken, uint orderid, uint price) public returns (bool success){
         uint value;
@@ -122,6 +166,93 @@ library LibPairBid {
 
         success = true;
 
+    }
+
+    function marketSellFull(LibPair.Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint slippage, uint amountp) public {
+    
+        uint total;
+        uint amount = amountp;
+
+        require(maintoken.transfer_from(self.msgSender, address(this), amount));
+        //uint value = valuep;
+        require( self.bestbid!=0);
+        assembly {
+            //retrieve the size of the code on target address, this needs assembly
+            //total := extcodesize(caller)
+            total := extcodesize(self.msgSender);
+        }
+        require(total==0);
+        
+        uint p = self.bestbid;
+        uint n;
+        uint vols = 0;
+        
+        if (self.msgSender!=self.owner){
+            total = amount.mul(self.takerfeeratio);
+            total = total.shiftRight(80);
+            maintoken.cointotalfees.add(total);
+        }else
+            total=0;
+
+        amount = amount.sub(total);
+
+        do {
+            n=0;
+            do {
+                n = self.bidqueuelist[p].step(n, false);
+                
+                if (n!=0){
+                    
+                    if (self.biddom[p][n].amount<=amount.sub(vols)){
+                        total = p.mul(self.biddom[p][n].amount);
+                        total = total.shiftRight(80);
+                        if (basetoken.id==0)
+                            require(self.msgSender.send(total));
+                        else
+                            require(basetoken.transfer_from(address(this), self.msgSender, total));
+                        require(maintoken.transfer_from(address(this), self.biddom[p][n].addr, self.biddom[p][n].amount));
+                        
+                        emit TradeFill(self.id, self.biddom[p][n].addr, n, -1*int(self.biddom[p][n].amount));
+
+                        vols = vols.add(self.biddom[p][n].amount);
+                        self.bidqueuelist[p].remove(n);
+                        if (self.askqueuelist[p].sizeOf()==0){
+                            self.askpricelist.remove(p);
+                        }
+                        //value = value.sub(total);
+                    }else{
+                        total = p.mul(amount.sub(vols));
+                        total = total.shiftRight(80);
+                        if (basetoken.id==0)
+                            require(self.msgSender.send(total));
+                        else
+                            require(basetoken.transfer_from(address(this),self.msgSender, total));
+                        require(maintoken.transfer_from(address(this), self.biddom[p][n].addr, amount.sub(vols)));
+                       
+                        emit TradeFill(self.id, self.biddom[p][n].addr, n, -1*int(amount.sub(vols)));
+
+                        self.biddom[p][n].amount.sub(amount.sub(vols));
+                        vols = vols.add(amount.sub(vols));
+                        //value = value.sub(total);
+                    }
+                }
+            } while((n!=0) && (vols<amount));
+            if (n==0){
+                p = self.bidpricelist.step(p,false); //bid is false
+                require(p!=0,"Not enought market volume");
+                require((self.bestbid.sub(p)) < slippage);
+            }
+        }while(vols<amount);
+        if (slippage!=0)
+            require((self.bestbid.sub(p)) < slippage);
+
+        if (p!=self.bestbid){
+            self.bestbid=p;
+            emit Quotes(self.id, self.bestask, self.bestbid);
+        }
+        emit Trade(self.id, self.msgSender, p, -1*int(amount));
+
+       // success = true;
     }
 
     event Quotes(uint pairid, uint ask, uint bid);    

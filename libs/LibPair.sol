@@ -54,6 +54,18 @@ library LibPair {
         return self.get_bid_order_price(orderid);
     }
 
+    function get_bid_order_details(LibPair.Pair storage self, uint orderid, uint price) public view returns(address, uint) { //address and amount
+        return self.get_bid_order_details(orderid, price);
+    }
+
+    function modify_bid_order_price(LibPair.Pair storage self, uint orderid, uint price, uint newprice, uint newprevprice) public returns (bool success) {
+        return self.modify_bid_order_price(orderid, price, newprice, newprevprice);
+    }
+
+    function delete_bid_order(LibPair.Pair storage self, LibToken.Token storage basetoken, uint orderid, uint price) public returns (bool success){
+        return self.delete_bid_order(basetoken, orderid, price);
+    }
+
     function modify_ask_order_price(Pair storage self, LibToken.Token storage maintoken, uint orderid, uint price, uint newprice, uint newprevprice) public returns(bool success){
         success = self.modify_ask_order_price(maintoken, orderid, price, newprice, newprevprice);
     }
@@ -132,12 +144,24 @@ library LibPair {
         success = self.limitSell(maintoken, orderid, price, prevprice, amount);
     }
 
- /*   function get_ask_order_details(Pair storage self, uint orderid, uint price) public view returns(address, uint) { //address and amount
-        return self.get_ask_order_details()
-    }*/
+    function limitBuy(LibPair.Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint orderid, uint price, uint prevprice, uint valuep) public returns (bool success) {
+        success = self.limitBuy(maintoken, basetoken, orderid, price, prevprice, valuep);
+    }
+
+    function get_ask_order_details(Pair storage self, uint orderid, uint price) public view returns(address, uint) { //address and amount
+        return self.get_ask_order_details(orderid, price)
+    }
+
+    function delete_ask_order(LibPair.Pair storage self, LibToken.Token storage maintoken, uint orderid, uint price) public returns (bool success){
+        return self.delete_ask_order(maintoken, orderid, price);
+    }
 
     function marketBuyFull(Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint slippage, uint valuep) public {
         self.marketBuyFull(maintoken, basetoken, slippage, valuep);
+    }
+
+    function marketSellFull(LibPair.Pair storage self, LibToken.Token storage maintoken, LibToken.Token storage basetoken, uint slippage, uint amountp) public {
+        self.marketSellFull(maintoken, basetoken, slippage, amountp);
     }
 
 

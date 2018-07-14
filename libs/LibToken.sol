@@ -4,15 +4,15 @@ import "./SafeMath.sol";
 library LibToken {
     using SafeMath for uint;
     struct Token {
-        uint id;
+       // uint id;
         //uint coininvestment;
         uint cointotalfees;
 
         address tokencontract;
         address msgSender;
     }  
-    function createToken(Token storage self, uint id, address taddress) public returns(bool success){
-        self.id = id;
+    function createToken(Token storage self, address taddress) public returns(bool success){
+        //self.id = id;
         self.tokencontract = (taddress);//new BlueToken(id, supply, name, desc, transfee);
         success = true;
     }
@@ -44,6 +44,11 @@ library LibToken {
         return self.coininvestment;
     }
 */
+    function consume_from(Token storage self, address from, uint amount) public returns(bool success){
+        require(self.tokencontract.call(bytes4(keccak256("consume_from(address,uint)")),from,amount));
+        success = true;
+    }
+    
     function transfer_from(Token storage self, address from, address to, uint amount) public returns(bool success){
         //require(BlueToken(self.tokencontract).transfer_from(from, to, amount));
         require(self.tokencontract.call(bytes4(keccak256("transfer_from(address,address,uint)")),from,to,amount));

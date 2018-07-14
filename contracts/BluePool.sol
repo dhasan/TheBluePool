@@ -13,13 +13,16 @@ contract BluePool is Owned,Feeless {
     using LibToken for LibToken.Token;
     using LibPair for LibPair.Pair;
 
-    uint constant ETHTOKENID = 0;
-    uint constant GASTOKENID = 1;
+    uint constant ETHTOKENID = 1;
+    uint constant GASTOKENID = 2;
 
-    LibPair.Pair[] pairs;
-    LibToken.Token[] tokens;  
+    LibCLLu.CLL pairslist;
+    mapping (uint => LibPair.Pair) pairs;
+   
+    LibCLLu.CLL tokenslist;
+    mapping (uint => LibToken.Token) tokens;
 
-    address feelessmaster;
+    uint mingasprice;
 
     modifier feelessPair(uint id) {
         require(msgSender!=address(0));
@@ -45,39 +48,41 @@ contract BluePool is Owned,Feeless {
         }
     }
 
-    function setFeelessMaster(address adr) public onlyOwner {
-        feelessmaster = adr;
+    function setMinGasPrice(uint p) public onlyOwner returns(bool success){
+        mingasprice = p;
+        success = true;
     }
 
-    function getFeelessMaster() public view returns(address){
-        return feelessmaster;
+    function getMinGasPrice() public view returns(uint){
+        return mingasprice;
     }
 
-    function feelessETHTransfer(address sender, address target, uint256 nonce, bytes sig, bool ext) public payable {
+    function gasTokenETHTransfer(address sender, address target, uint256 nonce, bytes sig) public payable {
+        require(tx.gasprice>=mingasprice);
 
         uint gasUsed = gasleft();
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
         bytes32 hash = keccak256(prefix, keccak256(target, uint(0), nonce));
         address _msgSender = ECRecovery.recover(hash, sig);
+    
         require(_msgSender == sender);
-        require(nonces[sender]++ == nonce);
-        
-        require(target.call.value(msg.value)());
+        require (nonces[sender]++ == nonce);
+        require(target.call.value(msg.value)()==false)
         gasUsed = gasUsed - gasleft();
-        require(tokens[GASTOKENID].transfer_from(sender, feelessmaster, gasUsed));
+        require(tokens[GASTOKENID].consume_from(sender, gasUsed));
 
     }
 
-    function performFeelessTransaction(address sender, address target, bytes data, uint256 nonce, bytes sig, bool ext) public payable {
+    function gasTokenTransaction(address sender, address target, bytes data, uint256 nonce, bytes sig) public payable {
         require(this == target);
-        
+        require(tx.gasprice>=mingasprice);
+
         uint256 gasUsed = gasleft();
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
         bytes32 hash = keccak256(prefix, keccak256(target, data, nonce));
         msgSender = ECRecovery.recover(hash, sig);
         require(msgSender == sender);
         require(nonces[msgSender]++ == nonce);
-        
         require(target.call.value(msg.value)(data));
         gasUsed = gasUsed - gasleft();
         require(tokens[GASTOKENID].transfer_from(msgSender, address(this), gasUsed));
@@ -86,178 +91,171 @@ contract BluePool is Owned,Feeless {
     }
     
     constructor() Owned(address(0)) public {
-        tokens.length = 1;
+        //tokens.length = 1;
+        tokenslist.push(ETHTOKENID, false);
+
 
     }   
-    function createToken(address taddress) onlyOwner public returns(uint){
-        tokens.length++;
-        require(tokens[tokens.length - 1].createToken(tokens.length - 1,taddress));
+    function createToken(uint tid, address taddress) onlyOwner public returns(uint){
+        LibToken.Token memory token;
+        require(tokenslist.nodeExists(tid)==false);
+        tokenslist.push(tid, false);
+        require(tokens[tid].createToken(taddress));
     }  
 
-    function createPair(bytes8 _name, uint m, uint b, uint makerfee, uint takerfee) onlyOwner public {
-        //LibPair.Pair memory p;
+    function createPair(bytes8 _name, uint pid, uint m, uint b, uint makerfee, uint takerfee) onlyOwner public {
+        LibPair.Pair memory p;
         require(m!=b);
-        require((tokens.length) > m,"Invalid main token id");
-        require((tokens.length) > b);
-       // p.owner = owner;
-       // pairs.push(p);
-        pairs.length++;
-        pairs[pairs.length - 1].owner = owner;
-        require(pairs[pairs.length - 1].createPair(_name, m, b,makerfee, takerfee));
+        require(tokenslist.nodeExists(m)==true);
+        require(tokenslist.nodeExists(b)==true);
+        require(pairslist.nodeExists(pid)==false);
+
+        pairslist.push(pid, false);
+       // pairs.length++;
+        pairs[pid].owner = owner;
+        require(pairs[pid].createPair(_name, m, b,makerfee, takerfee));
     }
 
     function getTokensCount() public view returns(uint){
-        return tokens.length;
+        return tokenslist.sizeOf();
+    }
+
+    function getNextTokenId(uint pid) public view returns(uint){
+        return tokenslist.step(pid, true);
+    }
+
+    function getPairsCount() public view returns(uint){
+        //return tokens.length;
+        return pairslist.sizeOf();
+    }
+
+    function getNextPairId(uint pid) public view returns(uint){
+        //return tokens.length;
+        return pairslist.step(pid, true);
     }
 
     function getPairTokenIds(uint pairid) public view returns(uint[2]){
+        require(pairslist.nodeExists(pairid)==true);
         return pairs[pairid].getPairTokenIds();
     }
     function getPairName(uint pairid) public view returns(bytes8){
+        require(pairslist.nodeExists(pairid)==true);
         return pairs[pairid].getPairName();
     }
 
-    function getPrices(uint pairid) public view returns(uint[2]){    
+    function getPrices(uint pairid) public view returns(uint[2]){ 
+        require(pairslist.nodeExists(pairid)==true);   
     	return pairs[pairid].getPrices();
     }
-    function getPrevAsk(uint pairid, uint price) public view returns (uint){     
+    function getPrevAsk(uint pairid, uint price) public view returns (uint){ 
+        require(pairslist.nodeExists(pairid)==true);    
         return pairs[pairid].getPrevAsk(price);
     }
-    function getPrevBid(uint pairid, uint price) public view returns (uint){     
+    function getPrevBid(uint pairid, uint price) public view returns (uint){  
+        require(pairslist.nodeExists(pairid)==true);   
         return pairs[pairid].getPrevBid(price);
     }
     function askPriceExists(uint pairid, uint price) public view returns(bool){
+        require(pairslist.nodeExists(pairid)==true);
         return pairs[pairid].askPriceExists(price);
     }
 
     function bidPriceExists(uint pairid, uint price) public view returns(bool){
+        require(pairslist.nodeExists(pairid)==true);
         return pairs[pairid].bidPriceExists(price);
     }
 
     function getAskDOMPrice(uint pairid, uint prevprice) public view returns(uint){
+        require(pairslist.nodeExists(pairid)==true);
         return pairs[pairid].getAskDOMPrice(prevprice);    
     }
     function getBidDOMPrice(uint pairid, uint prevprice) public view returns(uint){
+        require(pairslist.nodeExists(pairid)==true);
         return pairs[pairid].getBidDOMPrice(prevprice);    
     }
     function getAskDOMAmounts(uint pairid, uint price) public view returns(uint){
+        require(pairslist.nodeExists(pairid)==true);
         return pairs[pairid].getAskDOMAmounts(price);
     }
     function getBidDOMAmounts(uint pairid, uint price) public view returns(uint){
+        require(pairslist.nodeExists(pairid)==true);
         return pairs[pairid].getBidDOMAmounts(price);
     }
     function getFeesRatios(uint pairid) public view returns(uint[2]){
+        require(pairslist.nodeExists(pairid)==true);
         return pairs[pairid].getFeesRatios();
     }
 
     function get_ask_order_price(uint pairid, uint orderid) public view returns(uint){
+        require(pairslist.nodeExists(pairid)==true);
         return pairs[pairid].get_ask_order_price(orderid);
     }
 
     function get_bid_order_price(uint pairid, uint orderid) public view returns(uint){
+        require(pairslist.nodeExists(pairid)==true);
         return pairs[pairid].get_bid_order_price(orderid);
     }
 
+    function get_bid_order_details(uint pairid, uint orderid, uint price) public view returns(address, uint) { //address and amount
+        require(pairslist.nodeExists(pairid)==true);
+        return pairs[pairid].get_bid_order_details(orderid, price);
+    }
     function getFeesTotal(uint tokenid) public view onlyOwner returns(uint) {
+        require(tokenslist.nodeExists(tokenid)==true);
         return tokens[tokenid].cointotalfees;
     }
 
     function limitSell(uint pairid, uint orderid, uint price, uint prevprice, uint amount) public feeless feelessPair(pairid){
+        require(orderid!=0 && price!=0 && amount!=0);
+        require(pairslist.nodeExists(pairid)==true);
         require(pairs[pairid].limitSell(tokens[pairs[pairid].mainid], orderid, price, prevprice,amount));
     }
 
-    function modify_ask_order_price(uint pairid, uint orderid, uint price, uint newprice, uint newprevprice) public {
+    function limitBuy(uint pairid, uint orderid, uint price, uint prevprice, uint valuep) public returns (bool success) {
+        require(orderid!=0 && price!=0 && valuep!=0);
+        require(pairslist.nodeExists(pairid)==true);
+        require(pairs[pairid].limitBuy(tokens[pairs[pairid].mainid], tokens[pairs[pairid].baseid], orderid, price, prevprice, valuep));
+    }
+
+    function get_ask_order_details(uint pairid, uint orderid, uint price) public view returns(address, uint) { //address and amount
+        require(orderid!=0 && price!=0);
+        require(pairslist.nodeExists(pairid)==true);
+        require(pairs[pairid].get_ask_order_details(orderid, price));
+    }
+
+    function modify_ask_order_price(uint pairid, uint orderid, uint price, uint newprice, uint newprevprice) public feeless feelessPair(pairid){
+        require(orderid!=0 && price!=0 && newprice!=0);
+        require(pairslist.nodeExists(pairid)==true);
         require(pairs[pairid].modify_ask_order_price(tokens[pairs[pairid].mainid], orderid, price, newprice, newprevprice));
     }
 
-    function marketBuyFull(uint pairid, uint slippage, uint valuep) public payable {
+    function modify_bid_order_price(uint pairid, uint orderid, uint price, uint newprice, uint newprevprice) public returns (bool success) {
+        require(orderid!=0 && price!=0 && newprice!=0);
+        require(pairslist.nodeExists(pairid)==true);
+        require(pairs[pairid].modify_bid_order_price(orderid, price, newprice, newprevprice));
+    }
+
+    function delete_ask_order(uint pairid, uint orderid, uint price) public returns (bool success){
+        require(orderid!=0 && price!=0);
+        require(pairslist.nodeExists(pairid)==true);
+        require(pairs[pairid].delete_ask_order(tokens[pairs[pairid].mainid], orderid, price));
+    }
+
+    function delete_bid_order(uint pairid, uint orderid, uint price) public returns (bool success){
+        require(orderid!=0 && price!=0);
+        require(pairslist.nodeExists(pairid)==true);
+        require(pairs[pairid].delete_bid_order(tokens[pairs[pairid].baseid], orderid, price ));
+    }
+
+
+    function marketBuyFull(uint pairid, uint slippage, uint valuep) public payable feeless feelessPair(pairid){
+        require(pairslist.nodeExists(pairid)==true);
         pairs[pairid].marketBuyFull(tokens[pairs[pairid].mainid], tokens[pairs[pairid].baseid], slippage, valuep);
-/*
-         uint total;
-        uint value = msg.value;
-        require( pairs[pairid].bestask!=0);
-        assembly {
-            //retrieve the size of the code on target address, this needs assembly
-            total := extcodesize(caller)
-        }
-        require(total==0);
-        
-        if ((price!=pairs[pairid].bestask) && (slippage!=0) && (price!=0)){
-            if (price>pairs[pairid].bestask){
-                require((price.sub(pairs[pairid].bestask)) < slippage);
-            }else{
-                require((pairs[pairid].bestask.sub(price)) < slippage);
-            }
-        }
-        uint p = pairs[pairid].bestask;
-        uint n;
-        uint vols = 0;
-        uint amount;
-        if (msg.sender!=pairs[pairid].owner){
-            total = value.mul(pairs[pairid].takerfeeratio);
-            total = total.shiftRight(80);
-            tokens[pairs[pairid].baseid].cointotalfees.add(total);
-        }else
-            total=0;
+    }
 
-        value = value.sub(total);
-
-        do {
-            n=0;
-            do {
-                n = pairs[pairid].askqueuelist[p].step(n, true);
-                amount = value.shiftLeft(80);
-                amount = value.div(p);
-                if (n!=0){
-                    
-                    if (pairs[pairid].askdom[p][n].amount<=amount.sub(vols)){
-                        total = p.mul(pairs[pairid].askdom[p][n].amount);
-                        total = total.shiftRight(80);
-
-                        require(pairs[pairid].askdom[p][n].addr.send(total));
-                        require(tokens[pairs[pairid].mainid].transfer_from(address(this), msg.sender, pairs[pairid].askdom[p][n].amount));
-                        
-                        emit TradeFill(pairs[pairid].id, pairs[pairid].askdom[p][n].addr, n, -1*int(pairs[pairid].askdom[p][n].amount));
-
-                        vols = vols.add(pairs[pairid].askdom[p][n].amount);
-                        pairs[pairid].askqueuelist[p].remove(n);
-                        if (pairs[pairid].askqueuelist[p].sizeOf()==0){
-                            pairs[pairid].askpricelist.remove(p);
-                        }
-                        value = value.sub(total);
-                    }else{
-                        total = p.mul(amount.sub(vols));
-                        total = total.shiftRight(80);
-
-                        require(pairs[pairid].askdom[p][n].addr.send(total));
-                        require(tokens[pairs[pairid].mainid].transfer_from(address(this), msg.sender, amount.sub(vols)));
-                       
-                        emit TradeFill(pairs[pairid].id, pairs[pairid].askdom[p][n].addr, n, -1*int(amount.sub(vols)));
-
-                        pairs[pairid].askdom[p][n].amount.sub(amount.sub(vols));
-                        vols = vols.add(amount.sub(vols));
-                        value = value.sub(total);
-                    }
-                }
-            } while((n!=0) && (vols<amount));
-            if (n==0){
-                p = pairs[pairid].askpricelist.step(p,true); //ask is true
-                require(p!=0,"Not enought market volume");
-                if ((slippage!=0) && (price!=0))
-                    require((p.sub(price)) < slippage);
-            }
-        }while(vols<amount);
-        if (slippage!=0)
-            require((p.sub(price)) < slippage);
-
-        if (p!=pairs[pairid].bestask){
-            pairs[pairid].bestask=p;
-            emit Quotes(pairs[pairid].id, pairs[pairid].bestask, pairs[pairid].bestbid);
-        }
-        emit Trade(pairs[pairid].id, msg.sender, p, int(amount));
-
-       // success = true;
-*/
+    function marketSellFull(uint pairid, uint slippage, uint amountp) public {
+        require(pairslist.nodeExists(pairid)==true);
+        pairs[pairid].marketSellFull(tokens[pairs[pairid].mainid], tokens[pairs[pairid].baseid], slippage, amountp);
     }
 
     function withdrawFees(uint tid, uint amount, address rcv) onlyOwner public {
@@ -269,11 +267,13 @@ contract BluePool is Owned,Feeless {
 
 
     function getMarketDeposit(uint tid, address addr) public view returns(uint){ // this is for pairs library
-        uint i;
+
         uint p;
         uint n;
         uint acc;
-        for(i=0;i<pairs.length;i++){
+        uint i = pairslist.step(0, true);
+        //for(i=0;i<pairs.length;i++){
+        while(i!=0)
             if (pairs[i].mainid==tid){
                 p=0;
                 do {
@@ -299,13 +299,8 @@ contract BluePool is Owned,Feeless {
                     }while(n!=0);
                 }while(p!=0);
             }
-        }
-        return acc;
-    }
-
-    function calculateEthPerToken(uint investdeposit, uint marketdeposit, uint eths) public pure returns(uint){
-        uint acc = investdeposit.add(marketdeposit);
-        acc = eths.div(acc);
+            i = pairslist.step(i, true);
+        };
         return acc;
     }
    
