@@ -106,16 +106,16 @@ contract BluePool is Owned {
         require(tokens[tid].createToken(taddress));
     }  
 
-    function createPair(bytes8 _name, bytes8 pid, uint m, uint b, uint makerfee, uint takerfee) onlyOwner public {
+    function createPair(bytes8 _name, uint m, uint b, uint makerfee, uint takerfee) onlyOwner public {
         LibPair.Pair memory p;
         require(m!=b);
         require(tokenslist.nodeExists(m)==true);
         require(tokenslist.nodeExists(b)==true);
-        require(pairslist.nodeExists(pid)==false);
+        require(pairslist.nodeExists(_name)==false);
 
-        pairslist.push(pid, false);
-        pairs[pid].owner = owner;
-        require(pairs[pid].createPair(_name, m, b,makerfee, takerfee));
+        pairslist.push(_name, false);
+        pairs[_name].owner = owner;
+        require(pairs[_name].createPair(_name, m, b,makerfee, takerfee));
     }
 
     function getTokensCount() public view returns(uint){
