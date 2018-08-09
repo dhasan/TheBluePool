@@ -31,7 +31,7 @@ library LibPair {
         uint bestbid;
 
         address owner;
-        address msgSender;
+//        address msgSender;
 
         LibCLLu.CLL askpricelist;
         mapping (uint => LibCLLu.CLL) askqueuelist;

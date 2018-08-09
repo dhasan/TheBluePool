@@ -29,7 +29,7 @@ contract BlueToken is ERC20Interface, Owned{
     uint capital;
     uint preprice;
     
-    constructor(uint id, uint supply, bytes4 sym, bytes32 desk, uint8 dec, uint fee, address _market, uint pp) Owned(_market) public {
+    constructor(uint id, uint supply, bytes4 sym, bytes32 desk, uint8 dec, uint256 fee, address _market, uint256 pp) Owned(_market) public {
         symbol = sym;
         name = desk;
         decimals = dec;

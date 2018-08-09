@@ -1,5 +1,6 @@
 var LibCLLa = artifacts.require("./libs/LibCLLa.sol");
 var LibCLLu = artifacts.require("./libs/LibCLLu.sol");
+var LibCLLb8 = artifacts.require("./libs/LibCLLb8.sol");
 var LibPair = artifacts.require("./libs/LibPair.sol");
 var LibPairAsk = artifacts.require("./libs/LibPairAsk.sol");
 var LibPairBid = artifacts.require("./libs/LibPairBid.sol");
@@ -36,9 +37,12 @@ var ECRecovery = artifacts.require("./libs/ECRecovery.sol");
         }).then(function(result){
             return deployer.deploy(ECRecovery, {from: accounts[0]});
         }).then(function(result){
+            return deployer.deploy(LibCLLb8, {from: accounts[0]});
+        }).then(function(result){
             deployer.link(ECRecovery, BluePool);
             deployer.link(SafeMath, BluePool);
             deployer.link(LibCLLu, BluePool);
+            deployer.link(LibCLLb8, BluePool);
             deployer.link(LibToken, BluePool);
             deployer.link(LibPair, BluePool);
             return deployer.deploy(BluePool, {from: accounts[0]});

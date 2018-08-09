@@ -1,30 +1,32 @@
 pragma solidity ^0.4.23;
 
 import "../libs/LibCLLu.sol";
+import "../libs/LibCLLb8.sol";
 import "../libs/LibPair.sol";
 import "../libs/LibToken.sol";
 import "../libs/SafeMath.sol";
 import "./Owned.sol";
-import "./Feeless.sol";
+//import "./Feeless.sol";
 
-contract BluePool is Owned,Feeless {
+contract BluePool is Owned {
     using SafeMath for uint;
-    using LibCLLu for LibCLLu.CLL;    
+    using LibCLLu for LibCLLu.CLL;  
+    using LibCLLb8 for LibCLLb8.CLL;  
     using LibToken for LibToken.Token;
     using LibPair for LibPair.Pair;
 
     uint constant ETHTOKENID = 1;
     uint constant GASTOKENID = 2;
 
-    LibCLLu.CLL pairslist;
-    mapping (uint => LibPair.Pair) pairs;
+    LibCLLb8.CLL pairslist;
+    mapping (bytes8 => LibPair.Pair) pairs;
    
     LibCLLu.CLL tokenslist;
     mapping (uint => LibToken.Token) tokens;
 
     uint mingasprice;
-
-    modifier feelessPair(uint id) {
+/*
+    modifier feelessPair(bytes8 id) {
         require(msgSender!=address(0));
         if (pairs[id].msgSender != msgSender) {
 
@@ -47,7 +49,7 @@ contract BluePool is Owned,Feeless {
             _;
         }
     }
-
+*/
     function setMinGasPrice(uint p) public onlyOwner returns(bool success){
         mingasprice = p;
         success = true;
@@ -56,7 +58,7 @@ contract BluePool is Owned,Feeless {
     function getMinGasPrice() public view returns(uint){
         return mingasprice;
     }
-
+/*
     function gasTokenETHTransfer(address sender, address target, uint256 nonce, bytes sig) public payable {
         require(tx.gasprice>=mingasprice);
 
@@ -89,7 +91,7 @@ contract BluePool is Owned,Feeless {
 
         msgSender = address(0);
     }
-    
+    */
     constructor() Owned(address(0)) public {
         //tokens.length = 1;
         tokenslist.push(ETHTOKENID, false);
@@ -104,7 +106,7 @@ contract BluePool is Owned,Feeless {
         require(tokens[tid].createToken(taddress));
     }  
 
-    function createPair(bytes8 _name, uint pid, uint m, uint b, uint makerfee, uint takerfee) onlyOwner public {
+    function createPair(bytes8 _name, bytes8 pid, uint m, uint b, uint makerfee, uint takerfee) onlyOwner public {
         LibPair.Pair memory p;
         require(m!=b);
         require(tokenslist.nodeExists(m)==true);
@@ -112,7 +114,6 @@ contract BluePool is Owned,Feeless {
         require(pairslist.nodeExists(pid)==false);
 
         pairslist.push(pid, false);
-       // pairs.length++;
         pairs[pid].owner = owner;
         require(pairs[pid].createPair(_name, m, b,makerfee, takerfee));
     }
@@ -130,131 +131,133 @@ contract BluePool is Owned,Feeless {
         return pairslist.sizeOf();
     }
 
-    function getNextPairId(uint pid) public view returns(uint){
+    function getNextPairId(bytes8 pid) public view returns(bytes8){
         //return tokens.length;
         return pairslist.step(pid, true);
     }
 
-    function getPairTokenIds(uint pairid) public view returns(uint[2]){
+    function getPairTokenIds(bytes8 pairid) public view returns(uint[2]){
         require(pairslist.nodeExists(pairid)==true);
         return pairs[pairid].getPairTokenIds();
     }
-    function getPairName(uint pairid) public view returns(bytes8){
+    function getPairName(bytes8 pairid) public view returns(bytes8){
         require(pairslist.nodeExists(pairid)==true);
         return pairs[pairid].getPairName();
     }
 
-    function getPrices(uint pairid) public view returns(uint[2]){ 
+    function getPrices(bytes8 pairid) public view returns(uint[2]){ 
         require(pairslist.nodeExists(pairid)==true);   
     	return pairs[pairid].getPrices();
     }
-    function getPrevAsk(uint pairid, uint price) public view returns (uint){ 
+    function getPrevAsk(bytes8 pairid, uint price) public view returns (uint){ 
         require(pairslist.nodeExists(pairid)==true);    
         return pairs[pairid].getPrevAsk(price);
     }
-    function getPrevBid(uint pairid, uint price) public view returns (uint){  
+    function getPrevBid(bytes8 pairid, uint price) public view returns (uint){  
         require(pairslist.nodeExists(pairid)==true);   
         return pairs[pairid].getPrevBid(price);
     }
-    function askPriceExists(uint pairid, uint price) public view returns(bool){
+    function askPriceExists(bytes8 pairid, uint price) public view returns(bool){
         require(pairslist.nodeExists(pairid)==true);
         return pairs[pairid].askPriceExists(price);
     }
 
-    function bidPriceExists(uint pairid, uint price) public view returns(bool){
+    function bidPriceExists(bytes8 pairid, uint price) public view returns(bool){
         require(pairslist.nodeExists(pairid)==true);
         return pairs[pairid].bidPriceExists(price);
     }
 
-    function getAskDOMPrice(uint pairid, uint prevprice) public view returns(uint){
+    function getAskDOMPrice(bytes8 pairid, uint prevprice) public view returns(uint){
         require(pairslist.nodeExists(pairid)==true);
         return pairs[pairid].getAskDOMPrice(prevprice);    
     }
-    function getBidDOMPrice(uint pairid, uint prevprice) public view returns(uint){
+    function getBidDOMPrice(bytes8 pairid, uint prevprice) public view returns(uint){
         require(pairslist.nodeExists(pairid)==true);
         return pairs[pairid].getBidDOMPrice(prevprice);    
     }
-    function getAskDOMAmounts(uint pairid, uint price) public view returns(uint){
+    function getAskDOMAmounts(bytes8 pairid, uint price) public view returns(uint){
         require(pairslist.nodeExists(pairid)==true);
         return pairs[pairid].getAskDOMAmounts(price);
     }
-    function getBidDOMAmounts(uint pairid, uint price) public view returns(uint){
+    function getBidDOMAmounts(bytes8 pairid, uint price) public view returns(uint){
         require(pairslist.nodeExists(pairid)==true);
         return pairs[pairid].getBidDOMAmounts(price);
     }
-    function getFeesRatios(uint pairid) public view returns(uint[2]){
+    function getFeesRatios(bytes8 pairid) public view returns(uint[2]){
         require(pairslist.nodeExists(pairid)==true);
         return pairs[pairid].getFeesRatios();
     }
 
-    function get_ask_order_price(uint pairid, uint orderid) public view returns(uint){
-        require(pairslist.nodeExists(pairid)==true);
-        return pairs[pairid].get_ask_order_price(orderid);
-    }
-
-    function get_bid_order_price(uint pairid, uint orderid) public view returns(uint){
-        require(pairslist.nodeExists(pairid)==true);
-        return pairs[pairid].get_bid_order_price(orderid);
-    }
-
-    function get_bid_order_details(uint pairid, uint orderid, uint price) public view returns(address, uint) { //address and amount
-        require(pairslist.nodeExists(pairid)==true);
-        return pairs[pairid].get_bid_order_details(orderid, price);
-    }
+   
     function getFeesTotal(uint tokenid) public view onlyOwner returns(uint) {
         require(tokenslist.nodeExists(tokenid)==true);
         return tokens[tokenid].cointotalfees;
     }
 
-    function limitSell(uint pairid, uint orderid, uint price, uint prevprice, uint amount) public feeless feelessPair(pairid){
+    function limitSell(bytes8 pairid, uint orderid, uint price, uint prevprice, uint amount) public {
         require(orderid!=0 && price!=0 && amount!=0);
         require(pairslist.nodeExists(pairid)==true);
         require(pairs[pairid].limitSell(tokens[pairs[pairid].mainid], orderid, price, prevprice,amount));
     }
 
-    function limitBuy(uint pairid, uint orderid, uint price, uint prevprice, uint valuep) public returns (bool success) {
+    function limitBuy(bytes8 pairid, uint orderid, uint price, uint prevprice, uint valuep) public returns (bool success) {
         require(orderid!=0 && price!=0 && valuep!=0);
         require(pairslist.nodeExists(pairid)==true);
         require(pairs[pairid].limitBuy(tokens[pairs[pairid].mainid], tokens[pairs[pairid].baseid], orderid, price, prevprice, valuep));
     }
+/*
+    function get_ask_order_price(bytes8 pairid, uint orderid) public view returns(uint){
+        require(pairslist.nodeExists(pairid)==true);
+        return pairs[pairid].get_ask_order_price(orderid);
+    }
 
-    function get_ask_order_details(uint pairid, uint orderid, uint price) public view returns(address, uint) { //address and amount
+    function get_bid_order_price(bytes8 pairid, uint orderid) public view returns(uint){
+        require(pairslist.nodeExists(pairid)==true);
+        return pairs[pairid].get_bid_order_price(orderid);
+    }
+
+    function get_bid_order_details(bytes8 pairid, uint orderid, uint price) public view returns(address, uint) { //address and amount
+        require(pairslist.nodeExists(pairid)==true);
+        return pairs[pairid].get_bid_order_details(orderid, price);
+    }
+
+    function get_ask_order_details(bytes8 pairid, uint orderid, uint price) public view returns(address, uint) { //address and amount
         require(orderid!=0 && price!=0);
         require(pairslist.nodeExists(pairid)==true);
         return pairs[pairid].get_ask_order_details(orderid, price);
     }
 
-    function modify_ask_order_price(uint pairid, uint orderid, uint price, uint newprice, uint newprevprice) public feeless feelessPair(pairid){
+    function modify_ask_order_price(bytes8 pairid, uint orderid, uint price, uint newprice, uint newprevprice) public {
         require(orderid!=0 && price!=0 && newprice!=0);
         require(pairslist.nodeExists(pairid)==true);
         require(pairs[pairid].modify_ask_order_price(tokens[pairs[pairid].mainid], orderid, price, newprice, newprevprice));
     }
 
-    function modify_bid_order_price(uint pairid, uint orderid, uint price, uint newprice, uint newprevprice) public returns (bool success) {
+    function modify_bid_order_price(bytes8 pairid, uint orderid, uint price, uint newprice, uint newprevprice) public returns (bool success) {
         require(orderid!=0 && price!=0 && newprice!=0);
         require(pairslist.nodeExists(pairid)==true);
         require(pairs[pairid].modify_bid_order_price(orderid, price, newprice, newprevprice));
     }
 
-    function delete_ask_order(uint pairid, uint orderid, uint price) public returns (bool success){
+    function delete_ask_order(bytes8 pairid, uint orderid, uint price) public returns (bool success){
         require(orderid!=0 && price!=0);
         require(pairslist.nodeExists(pairid)==true);
         require(pairs[pairid].delete_ask_order(tokens[pairs[pairid].mainid], orderid, price));
     }
 
-    function delete_bid_order(uint pairid, uint orderid, uint price) public returns (bool success){
+    function delete_bid_order(bytes8 pairid, uint orderid, uint price) public returns (bool success){
         require(orderid!=0 && price!=0);
         require(pairslist.nodeExists(pairid)==true);
         require(pairs[pairid].delete_bid_order(tokens[pairs[pairid].baseid], orderid, price ));
     }
+*/
 
-
-    function marketBuyFull(uint pairid, uint slippage, uint valuep) public payable feeless feelessPair(pairid){
+    function marketBuyFull(bytes8 pairid, uint slippage, uint valuep) public payable {
         require(pairslist.nodeExists(pairid)==true);
         pairs[pairid].marketBuyFull(tokens[pairs[pairid].mainid], tokens[pairs[pairid].baseid], slippage, valuep);
     }
 
-    function marketSellFull(uint pairid, uint slippage, uint amountp) public {
+    function marketSellFull(bytes8 pairid, uint slippage, uint amountp) public {
         require(pairslist.nodeExists(pairid)==true);
         pairs[pairid].marketSellFull(tokens[pairs[pairid].mainid], tokens[pairs[pairid].baseid], slippage, amountp);
     }
@@ -272,7 +275,7 @@ contract BluePool is Owned,Feeless {
         uint p;
         uint n;
         uint acc;
-        uint i = pairslist.step(0, true);
+        bytes8 i = pairslist.step(0, true);
         //for(i=0;i<pairs.length;i++){
         while(i!=0){
             if (pairs[i].mainid==tid){
